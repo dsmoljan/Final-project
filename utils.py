@@ -23,7 +23,7 @@ acdc_palette = [0, 0, 0, 128, 64, 128, 70, 70, 70, 250, 170, 30] #iz pocetnih 0,
 
 #0,0,0 -> pozadina
 #255,0,0 -> zubi (crvena)
-ortopanograms_palette = [0, 0, 0, 255, 255, 0] #ova paleta koristi se za prikaz RGB slike u tensorboardu prilikom treniranja modela
+ortopanograms_palette = [255, 255, 0] #ova paleta koristi se za prikaz RGB slike u tensorboardu prilikom treniranja modela
 
 #ortopanograms_palette = [255,255,0] #ova paleta koristi se prilikom outputa modela, odnosno prilikom
 #generiranja slika iz jednokanalnih tenzora, koji su izlaz modela u test nacinu rada
