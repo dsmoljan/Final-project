@@ -405,7 +405,7 @@ class semisuper_cycleGAN(object):
                 # args.lamda_gt = args.lamda_gt + 0.04
 
             #u svakom koraku petlje uzima jedan (ili više) par ortopanograma+ground truth te jednu neoznačenu sliku
-            for i, ((l_img, l_gt, _), (unl_img, _, _)) in enumerate(zip(labeled_loader, unlabeled_loader)):
+            for i, ((l_img, l_gt, _), (unl_img, _)) in enumerate(zip(labeled_loader, unlabeled_loader)):
                 # step
                 step = epoch * min(len(labeled_loader), len(unlabeled_loader)) + i + 1
 

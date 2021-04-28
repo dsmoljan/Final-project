@@ -61,7 +61,7 @@ def colorize_mask(mask, dataset):
         new_mask.putpalette(acdc_palette)
     elif (dataset == 'ortopanograms'):
         new_mask.putpalette(ortopanograms_palette)
-    #ovo možda nije najbolji nacin, ali bi trebalo raditi
+    #ovo moï¿½da nije najbolji nacin, ali bi trebalo raditi
     elif (dataset == 'ortopanograms_test_output'):
         new_mask.putpalette(ortopanograms_test_output_pallete)
 
@@ -296,7 +296,7 @@ def load_checkpoint(ckpt_path, map_location='cpu'):
 
 
 # To store 50 generated images in a pool and sample from it when it is full
-# Shrivastava et al’s strategy
+# Shrivastava et alï¿½s strategy
 class Sample_from_Pool(object):
     def __init__(self, max_elements=50):
         self.max_elements = max_elements
@@ -363,16 +363,16 @@ def make_one_hot(labels, dataname, gpu_id):
     elif dataname == 'acdc':
         C = 4
     elif dataname == 'ortopanograms':
-        C = 2
+        C = 1
     elif dataname == 'ortopanograms_test_output':
-        C = 2
+        C = 1
     else:
         raise NotImplementedError
 
     labels = labels.long()
     try:
         #ovdje radi one hot sliku koja ima isto batcheva kao originalna (to znaci labels.size(0), C kanala, isto redaka i stupaca kao i originalna (labels.size(2) i labels.size(3))
-        one_hot = torch.FloatTensor(labels.size(0), C, labels.size(2), labels.size(3)).zero_() #https://stackoverflow.com/questions/55565687/i-dont-understand-the-code-for-training-a-classifier-in-pytorch objašnjava što znaci npr. labels(0)
+        one_hot = torch.FloatTensor(labels.size(0), C, labels.size(2), labels.size(3)).zero_() #https://stackoverflow.com/questions/55565687/i-dont-understand-the-code-for-training-a-classifier-in-pytorch objaï¿½njava ï¿½to znaci npr. labels(0)
         one_hot = cuda(one_hot, gpu_id)
     except:
         one_hot = torch.FloatTensor(labels.size(0), C, labels.size(2), labels.size(3)).zero_()
@@ -407,7 +407,7 @@ class runningScore(object):
 
     #trebat ce dodati za ortopanograme!
     #ovdje se racuna MIoU
-    #moguce da ce trebati prepraviti kod da se doda baš specifican nacin izracuna za ortopanograme, ne svida mi se što
+    #moguce da ce trebati prepraviti kod da se doda baï¿½ specifican nacin izracuna za ortopanograme, ne svida mi se ï¿½to
     #stalno vraca 1.0
     def get_scores(self):
         """Returns accuracy score evaluation result.

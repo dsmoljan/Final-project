@@ -112,8 +112,6 @@ class OrtoDataset(Dataset):
                 img = self.transformation['img'](img)
 
             #print("Vrijednosti slike sa RGB: " + np.unique(img.numpy()))
-
-
             return img, self.imgs[index]
         else:
             ora_path = os.path.join(self.root_path, 'training', #u mapi /training nalaze se i training i validation slike, uzimaju se prema onom što piše u traing.txt, odnosno validation.txt
