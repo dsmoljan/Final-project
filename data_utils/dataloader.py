@@ -100,7 +100,7 @@ class OrtoDataset(Dataset):
 
             return img, self.imgs[index]
         elif self.name == 'unlabel':
-            img_path = os.path.join(self.root_path, 'unlabeled/data_store', #u mapi /training nalaze se i training i validation slike, uzimaju se prema onom što piše u traing.txt, odnosno validation.txt
+            img_path = os.path.join(self.root_path, 'unlabeled/data_store',
                                     self.imgs[index] + '.jpg')
 
             img = Image.open(img_path)#.convert('RGB')
