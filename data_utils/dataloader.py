@@ -44,7 +44,7 @@ class OrtoDataset(Dataset):
             labeled_imgs = np.random.choice(train_imgs, size=int(self.ratio * train_imgs.__len__()), replace=False)
             labeled_imgs = list(labeled_imgs)
 
-            unlabeled_imgs = np.random.choice(unlabeled_list, size = train_imgs.__len(), replace=False)
+            unlabeled_imgs = np.random.choice(unlabeled_list, size = train_imgs.__len__(), replace=False)
             unlabeled_imgs = list(unlabeled_imgs)
 
             #čini se da ovdje jednostavno uzmemo sve slike koje su nam dostupne, te neke stavimo da su nam labeled, neke ne
