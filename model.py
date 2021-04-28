@@ -225,7 +225,7 @@ class semisuper_cycleGAN(object):
         elif args.dataset == 'acdc':
             self.n_channels = 4
         elif args.dataset == 'ortopanograms':
-            self.n_channels = 2 #za početak samo razlikujemo pozadinu i zube
+            self.n_channels = 1 #za početak samo razlikujemo pozadinu i zube
       
         print("Postavljam broj kanala na: ", end = "")
         print(str(self.n_channels))
@@ -363,11 +363,11 @@ class semisuper_cycleGAN(object):
                                             augmentation=None)
         elif self.args.dataset == 'ortopanograms':
             #ratio se odnosi na omjer označenih i neoznačenih slika, to kasnije samo podesi kad češ znati koliko imaš kojih slika!
-            labeled_set = OrtoDataset(root_path=root_ortopanograms, name='label', ratio=0.5, transformation=transform,
+            labeled_set = OrtoDataset(root_path=root_ortopanograms, name='label', ratio=1, transformation=transform,
                                       augmentation=None)
-            unlabeled_set = OrtoDataset(root_path=root_ortopanograms, name='unlabel', ratio=0.5, transformation=transform,
+            unlabeled_set = OrtoDataset(root_path=root_ortopanograms, name='unlabel', ratio=1, transformation=transform,
                                             augmentation=None)
-            val_set = OrtoDataset(root_path=root_ortopanograms, name='val', ratio=0.5, transformation=transform,
+            val_set = OrtoDataset(root_path=root_ortopanograms, name='val', ratio=1, transformation=transform,
                                   augmentation=None)
 
         '''
