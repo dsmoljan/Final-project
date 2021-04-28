@@ -103,7 +103,7 @@ class OrtoDataset(Dataset):
             img_path = os.path.join(self.root_path, 'unlabeled/data_store',
                                     self.imgs[index] + '.jpg')
 
-            img = Image.open(img_path)#.convert('RGB')
+            img = Image.open(img_path).convert('RGB')
 
             if self.augmentation is not None:
                 img = self.augmentation(img)
