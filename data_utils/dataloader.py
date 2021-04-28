@@ -22,7 +22,7 @@ class OrtoDataset(Dataset):
     split_ratio = [0.85, 0.15] #podjela na label/unlabel ili train/val?
 
     #ratio sam stavio da bude 1 zasad čisto da probam kako ide samo kad ima označene slike, bez neoznačenih
-    def __init__(self, root_path, name='label', ratio=0.5, transformation=None, augmentation=None): #ratio je valjda koliko od training slika da uzme za "neoznačene"?
+    def __init__(self, root_path, name='label', ratio=1, transformation=None, augmentation=None): #ratio je valjda koliko od training slika da uzme za "neoznačene"?
         super(OrtoDataset, self).__init__()
         self.root_path = root_path #dakle root, trenutni direktorij, podaci se nalaze u ../data mislim
         self.ratio = ratio
@@ -38,12 +38,14 @@ class OrtoDataset(Dataset):
             #ovdje samo radimo tablice, u tablici train_imgs su pathovi svih train slika, a u tablici val_imgs su pathovi svih val slika
             train_imgs = pd.read_table(os.path.join(self.root_path, 'imagelists', 'train.txt')).values.reshape(-1)
             val_imgs = pd.read_table(os.path.join(self.root_path, 'imagelists', 'val.txt')).values.reshape(-1)
+            unlabeled_list = pd.read_table(os.path.join(self.root_path, 'imagelists', 'unlabeled.txt')).values.reshape(-1)
 
             #ovaj dio koda će možda trebati malo izmijeniti jednom kada ćemo imati neoznačene slike
             labeled_imgs = np.random.choice(train_imgs, size=int(self.ratio * train_imgs.__len__()), replace=False)
             labeled_imgs = list(labeled_imgs)
 
-            unlabeled_imgs = [x for x in train_imgs if x not in labeled_imgs]
+            unlabeled_imgs = np.random.chouce(unlabeled_list, size = train_imgs.__len(), replace=False)
+            unlabeled_imgs = list(unlabeled_imgs)
 
             #čini se da ovdje jednostavno uzmemo sve slike koje su nam dostupne, te neke stavimo da su nam labeled, neke ne
             #moguće da jednom kad ćeš actually imati dodatne neoznačene slike ćeš ovdje morati promijeniti kod
@@ -97,7 +99,22 @@ class OrtoDataset(Dataset):
 
 
             return img, self.imgs[index]
+        elif self.name == 'unlabel':
+            img_path = os.path.join(self.root_path, 'unlabeled/data_store', #u mapi /training nalaze se i training i validation slike, uzimaju se prema onom što piše u traing.txt, odnosno validation.txt
+                                    self.imgs[index] + '.jpg')
 
+            img = Image.open(img_path)#.convert('RGB')
+
+            if self.augmentation is not None:
+                img = self.augmentation(img)
+
+            if self.transformation:
+                img = self.transformation['img'](img)
+
+            #print("Vrijednosti slike sa RGB: " + np.unique(img.numpy()))
+
+
+            return img, self.imgs[index]
         else:
             ora_path = os.path.join(self.root_path, 'training', #u mapi /training nalaze se i training i validation slike, uzimaju se prema onom što piše u traing.txt, odnosno validation.txt
                                     self.imgs[index] + '.ora')  # jedno je valjda slika
@@ -120,7 +137,7 @@ class OrtoDataset(Dataset):
             #dakle sad treba učitati samo slike koje ili nemaju slova u sebi, ili imaju samo Ex
 
             #potencijalna greška ukoliko background nije uvijek zadnji
-            gt = ora_image['root']['childs'][-1]['raster'].convert('L') #ovo je da je spremi kao polycrhome, P znaci ne�to drugo
+            gt = ora_image['root']['childs'][-1]['raster'].convert('L') #ovo je da je spremi kao polycrhome, P znaci nesto drugo
             gt = self.transformation['gt'](gt)
             gt[gt != 0] = 1 #sve vrijednosti koje nisu 0 (pozadina) mijenjamo sa 1
 
@@ -137,7 +154,7 @@ class OrtoDataset(Dataset):
                     #https://discuss.pytorch.org/t/combine-2-channels-of-an-image/75628/3
                     #kasnije kad ćeš imati više slika koristiti ćeš funkciju Relabel
             
-            #ove 3 linije koristi ako hoce� provjeriti je li ucitava gt slike dobro, tj. spaja li ih dobro u jednu sliku
+            #ove 3 linije koristi ako hoce� provjeriti je li ucitava gt slike dobro, tj. spaja li ih dobro u jednu sliku
             #new_img = gt.detach().squeeze().cpu().numpy()
             #new_img = utils.colorize_mask(new_img, "ortopanograms")
             #new_img.save(os.path.join(self.imgs[index] + '.png'))
