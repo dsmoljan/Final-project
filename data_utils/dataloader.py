@@ -66,7 +66,7 @@ class OrtoDataset(Dataset):
                 # unlabeled_imgs += (new_list_1 + new_list_2)
             elif self.ratio < 1:
 
-                new_list = list(np.random.choice(np.array(unlabeled_imgs), size=int(len(labeled_imgs) - len(unlabeled_imgs), replace=False)))
+                new_list = list(np.random.choice(np.array(unlabeled_imgs), size=int(len(labeled_imgs) - len(unlabeled_imgs)), replace=False))
                 unlabeled_imgs += new_list
                 # new_ratio = round(((1-self.ratio)/(self.ratio + 1e-6)), 1)
                 # excess_ratio = new_ratio - 1
