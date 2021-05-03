@@ -225,7 +225,7 @@ class semisuper_cycleGAN(object):
         elif args.dataset == 'acdc':
             self.n_channels = 4
         elif args.dataset == 'ortopanograms':
-            self.n_channels = 1 #za početak samo razlikujemo pozadinu i zube
+            self.n_channels = 2 #za početak samo razlikujemo pozadinu i zube
       
         print("Postavljam broj kanala na: ", end = "")
         print(str(self.n_channels))
@@ -643,14 +643,14 @@ class semisuper_cycleGAN(object):
             fake_img = fake_img.cpu()
             fake_img_from_labels = fake_img_from_labels.cpu()
             ### Now i am going to revert back the transformation on these images
-            if self.args.dataset == 'voc2012' or self.args.dataset == 'cityscapes':
+            if self.args.dataset == 'voc2012' or self.args.dataset == 'cityscapes' or self.args.dataset == 'ortopanograms':
                 trans_mean = [0.5, 0.5, 0.5]
                 trans_std = [0.5, 0.5, 0.5]
                 for i in range(3):
                     fake_img[:, i, :, :] = ((fake_img[:, i, :, :] * trans_std[i]) + trans_mean[i])
                     fake_img_from_labels[:, i, :, :] = ((fake_img_from_labels[:, i, :, :] * trans_std[i]) + trans_mean[i])
             
-            elif self.args.dataset == 'acdc' or self.args.dataset == 'ortopanograms':
+            elif self.args.dataset == 'acdc':
                 trans_mean = [0.5]
                 trans_std = [0.5]
                 for i in range(1):

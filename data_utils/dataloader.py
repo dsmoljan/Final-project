@@ -21,7 +21,8 @@ class OrtoDataset(Dataset):
 
     split_ratio = [0.85, 0.15] #podjela na label/unlabel ili train/val?
 
-    #ratio sam stavio da bude 1 zasad čisto da probam kako ide samo kad ima označene slike, bez neoznačenih
+    #po novom, ratio označava omjer neoznačenih slika u odnosu na označene
+    #dakle ako je 1, jednak je broj označenih i neoznačenih slika
     def __init__(self, root_path, name='label', ratio=1, transformation=None, augmentation=None): #ratio je valjda koliko od training slika da uzme za "neoznačene"?
         super(OrtoDataset, self).__init__()
         self.root_path = root_path #dakle root, trenutni direktorij, podaci se nalaze u ../data mislim
@@ -41,27 +42,37 @@ class OrtoDataset(Dataset):
             unlabeled_list = pd.read_table(os.path.join(self.root_path, 'imagelists', 'unlabeled.txt')).values.reshape(-1)
 
             #ovaj dio koda će možda trebati malo izmijeniti jednom kada ćemo imati neoznačene slike
-            labeled_imgs = np.random.choice(train_imgs, size=int(self.ratio * train_imgs.__len__()), replace=False)
+            labeled_imgs = np.random.choice(train_imgs, size=int(train_imgs.__len__()), replace=False)
             labeled_imgs = list(labeled_imgs)
 
-            unlabeled_imgs = np.random.choice(unlabeled_list, size = train_imgs.__len__(), replace=False)
+            unlabeled_imgs = np.random.choice(unlabeled_list, size = ratio*train_imgs.__len__(), replace=False)
             unlabeled_imgs = list(unlabeled_imgs)
+
+            current_ratio = len(unlabeled_imgs)/len(labeled_imgs)
 
             #čini se da ovdje jednostavno uzmemo sve slike koje su nam dostupne, te neke stavimo da su nam labeled, neke ne
             #moguće da jednom kad ćeš actually imati dodatne neoznačene slike ćeš ovdje morati promijeniti kod
             ### Now here we equalize the lengths of labelled and unlabelled imgs by just repeating up some images
-            if self.ratio > 0.5:
-                new_ratio = round((self.ratio/(1-self.ratio + 1e-6)), 1)
-                excess_ratio = new_ratio - 1
-                new_list_1 = unlabeled_imgs * int(excess_ratio)
-                new_list_2 = list(np.random.choice(np.array(unlabeled_imgs), size=int((excess_ratio - int(excess_ratio))*unlabeled_imgs.__len__()), replace=False))
-                unlabeled_imgs += (new_list_1 + new_list_2)
-            elif self.ratio < 0.5:
-                new_ratio = round(((1-self.ratio)/(self.ratio + 1e-6)), 1)
-                excess_ratio = new_ratio - 1
-                new_list_1 = labeled_imgs * int(excess_ratio)
-                new_list_2 = list(np.random.choice(np.array(labeled_imgs), size=int((excess_ratio - int(excess_ratio))*labeled_imgs.__len__()), replace=False))
-                labeled_imgs += (new_list_1 + new_list_2)
+            if self.ratio > 1:
+                #ako je omjer veći od 1, to znači da ima više neoznačenih slika nego označenih, te treba dodati još označenih slika
+
+                new_list = list(np.random.choice(np.array(labeled_imgs), size = int(len(unlabeled_imgs) - len(labeled_imgs), replace=False)))
+                labeled_imgs += new_list
+
+                # new_ratio = round((self.ratio/(1-self.ratio + 1e-6)), 1)
+                # excess_ratio = new_ratio - 1
+                # new_list_1 = unlabeled_imgs * int(excess_ratio)
+                # new_list_2 = list(np.random.choice(np.array(unlabeled_imgs), size=int((excess_ratio - int(excess_ratio))*unlabeled_imgs.__len__()), replace=False))
+                # unlabeled_imgs += (new_list_1 + new_list_2)
+            elif self.ratio < 1:
+
+                new_list = list(np.random.choice(np.array(unlabeled_imgs), size=int(len(labeled_imgs) - len(unlabeled_imgs), replace=False)))
+                unlabeled_imgs += new_list
+                # new_ratio = round(((1-self.ratio)/(self.ratio + 1e-6)), 1)
+                # excess_ratio = new_ratio - 1
+                # new_list_1 = labeled_imgs * int(excess_ratio)
+                # new_list_2 = list(np.random.choice(np.array(labeled_imgs), size=int((excess_ratio - int(excess_ratio))*labeled_imgs.__len__()), replace=False))
+                # labeled_imgs += (new_list_1 + new_list_2)
 
         if self.name == 'test':
             test_imgs = pd.read_table(os.path.join(self.root_path, 'imagelists', 'test.txt')).values.reshape(-1)

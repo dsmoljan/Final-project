@@ -23,7 +23,7 @@ acdc_palette = [0, 0, 0, 128, 64, 128, 70, 70, 70, 250, 170, 30] #iz pocetnih 0,
 
 #0,0,0 -> pozadina
 #255,0,0 -> zubi (crvena)
-ortopanograms_palette = [255, 255, 0] #ova paleta koristi se za prikaz RGB slike u tensorboardu prilikom treniranja modela
+ortopanograms_palette = [0,0,0, 255, 255, 0] #ova paleta koristi se za prikaz RGB slike u tensorboardu prilikom treniranja modela
 
 #ortopanograms_palette = [255,255,0] #ova paleta koristi se prilikom outputa modela, odnosno prilikom
 #generiranja slika iz jednokanalnih tenzora, koji su izlaz modela u test nacinu rada
@@ -61,10 +61,6 @@ def colorize_mask(mask, dataset):
         new_mask.putpalette(acdc_palette)
     elif (dataset == 'ortopanograms'):
         new_mask.putpalette(ortopanograms_palette)
-    #ovo mo�da nije najbolji nacin, ali bi trebalo raditi
-    elif (dataset == 'ortopanograms_test_output'):
-        new_mask.putpalette(ortopanograms_test_output_pallete)
-
     return new_mask
 
 ### To convert a paletted image to a tensor image of 3 dimension
@@ -353,7 +349,7 @@ def make_one_hot(labels, dataname, gpu_id):
     target : torch.autograd.Variable of torch.cuda.FloatTensor
         N x C x H x W, where C is class number. One-hot encoded.
     '''
-    assert dataname in ('voc2012', 'cityscapes', 'acdc', 'ortopanograms','ortopanograms_test_output'),'dataset name should be one of the following: \'voc2012\',given {}'.format(dataname)
+    assert dataname in ('voc2012', 'cityscapes', 'acdc', 'ortopanograms'),'dataset name should be one of the following: \'voc2012\',given {}'.format(dataname)
 
 
     if dataname == 'voc2012':
@@ -363,9 +359,7 @@ def make_one_hot(labels, dataname, gpu_id):
     elif dataname == 'acdc':
         C = 4
     elif dataname == 'ortopanograms':
-        C = 1
-    elif dataname == 'ortopanograms_test_output':
-        C = 1
+        C = 2
     else:
         raise NotImplementedError
 

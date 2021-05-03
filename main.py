@@ -42,6 +42,7 @@ def get_args():
     parser.add_argument('--ndf', type=int, default=64, help='# of discrim filters in first conv layer')
     parser.add_argument('--gen_net', type=str, default='deeplab')
     parser.add_argument('--dis_net', type=str, default='fc_disc')
+    parser.add_argument('--unlabeled_ratio', type=float, default=1)
     args = parser.parse_args()
     return args
 

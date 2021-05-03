@@ -54,7 +54,7 @@ class ToLabel:
 
 class Colorize:
 
-    def __init__(self, n=22): #ovo bi isto možda trebalo modificirati...
+    def __init__(self, n=22): #ovo bi isto moï¿½da trebalo modificirati...
         self.cmap = colormap(256)
         self.cmap[n] = self.cmap[-1]
         self.cmap = torch.from_numpy(self.cmap[:n])
@@ -123,7 +123,7 @@ def get_transformation(size, resize=False, dataset = 'voc2012'):
     '''
 
     assert dataset in ['voc2012', 'cityscapes', 'acdc','ortopanograms','ortopanograms_test_output'], 'The dataset name must be set correctly in the get_transformation function'
-    if dataset == 'voc2012' or dataset == 'cityscapes':
+    if dataset == 'voc2012' or dataset == 'cityscapes' or dataset == 'ortopanograms':
         if resize:
             transfom_lst = [
                 Resize(size),
@@ -137,7 +137,7 @@ def get_transformation(size, resize=False, dataset = 'voc2012'):
                 ToTensor(),
                 Normalize([.5, .5, .5], [.5, .5, .5])
             ]
-    elif dataset == 'acdc' or dataset == 'ortopanograms':
+    elif dataset == 'acdc':
         if resize:
             transfom_lst = [
                 Resize(size),
