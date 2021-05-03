@@ -45,7 +45,7 @@ class OrtoDataset(Dataset):
             labeled_imgs = np.random.choice(train_imgs, size=int(train_imgs.__len__()), replace=False)
             labeled_imgs = list(labeled_imgs)
 
-            unlabeled_imgs = np.random.choice(unlabeled_list, size = ratio*train_imgs.__len__(), replace=False)
+            unlabeled_imgs = np.random.choice(unlabeled_list, size = int(ratio*train_imgs.__len__()), replace=False)
             unlabeled_imgs = list(unlabeled_imgs)
 
             current_ratio = len(unlabeled_imgs)/len(labeled_imgs)
