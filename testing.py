@@ -15,7 +15,7 @@ from data_utils import VOCDataset, CityscapesDataset, ACDCDataset, get_transform
 root = '../data/VOC2012test/VOC2012'
 root_cityscapes = '../data/Cityscape'
 root_acdc = '../data/ACDC'
-root_ortopanograms = '../data/Ortopanograms'
+root_ortopanograms = '../../data/Ortopanograms'
 
 
 def test(args):
