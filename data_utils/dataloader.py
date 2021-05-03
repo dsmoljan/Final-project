@@ -56,7 +56,9 @@ class OrtoDataset(Dataset):
             if self.ratio > 1:
                 #ako je omjer veći od 1, to znači da ima više neoznačenih slika nego označenih, te treba dodati još označenih slika
 
-                new_list = list(np.random.choice(np.array(labeled_imgs), size = int(len(unlabeled_imgs) - len(labeled_imgs)), replace=False))
+
+                new_imgs = np.random.choice(train_imgs,  size = int(len(unlabeled_imgs) - len(labeled_imgs)), replace=False)
+                new_list = list(new_imgs)
                 labeled_imgs += new_list
 
                 # new_ratio = round((self.ratio/(1-self.ratio + 1e-6)), 1)
@@ -65,8 +67,8 @@ class OrtoDataset(Dataset):
                 # new_list_2 = list(np.random.choice(np.array(unlabeled_imgs), size=int((excess_ratio - int(excess_ratio))*unlabeled_imgs.__len__()), replace=False))
                 # unlabeled_imgs += (new_list_1 + new_list_2)
             elif self.ratio < 1:
-
-                new_list = list(np.random.choice(np.array(unlabeled_imgs), size=int(len(labeled_imgs) - len(unlabeled_imgs)), replace=False))
+                new_imgs = np.random.choice(train_imgs,  size = int(len(labeled_imgs) - len(unlabeled_imgs)), replace=False)
+                new_list = list(new_imgs)
                 unlabeled_imgs += new_list
                 # new_ratio = round(((1-self.ratio)/(self.ratio + 1e-6)), 1)
                 # excess_ratio = new_ratio - 1
