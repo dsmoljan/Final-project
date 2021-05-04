@@ -32,7 +32,7 @@ class OrtoDataset(Dataset):
         self.transformation = transformation
         self.augmentation = augmentation
         assert name in ('label', 'unlabel','val', 'test'), 'dataset name should be restricted in "label", "unlabel", "test" and "val", given %s' % name
-        assert 0 <= ratio <= 1, 'the ratio between "labeled" and "unlabeled" should be between 0 and 1, given %.1f' % ratio
+        #assert 0 <= ratio <= 1, 'the ratio between "labeled" and "unlabeled" should be between 0 and 1, given %.1f' % ratio
         np.random.seed(1)  ### Because of this we are not getting repeated images for labelled and unlabelled data
 
         if self.name != 'test':
