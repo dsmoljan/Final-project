@@ -363,9 +363,9 @@ class semisuper_cycleGAN(object):
                                             augmentation=None)
         elif self.args.dataset == 'ortopanograms':
             #ratio se odnosi na omjer označenih i neoznačenih slika, to kasnije samo podesi kad češ znati koliko imaš kojih slika!
-            labeled_set = OrtoDataset(root_path=root_ortopanograms, name='label', ratio=1, transformation=transform,
+            labeled_set = OrtoDataset(root_path=root_ortopanograms, name='label', ratio=self.args.unlabeled_ratio, transformation=transform,
                                       augmentation=None)
-            unlabeled_set = OrtoDataset(root_path=root_ortopanograms, name='unlabel', ratio=1, transformation=transform,
+            unlabeled_set = OrtoDataset(root_path=root_ortopanograms, name='unlabel', ratio=self.args.unlabeled_ratio, transformation=transform,
                                             augmentation=None)
             val_set = OrtoDataset(root_path=root_ortopanograms, name='val', ratio=1, transformation=transform,
                                   augmentation=None)
