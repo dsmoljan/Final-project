@@ -57,6 +57,8 @@ def validation(args):
 
     ### Interpolation
     interp = nn.Upsample(size=(args.crop_height, args.crop_width), mode='bilinear', align_corners=True)
+    interp2 = nn.Upsample(size=(384, 814), mode='bilinear', align_corners=True)
+
 
     ### Softmax activation
     activation_softmax = nn.Softmax2d()
@@ -114,11 +116,11 @@ def validation(args):
             seg_map = interp(seg_map)
             seg_map = activation_softmax(seg_map)
             fake_img = Gis(seg_map).detach()
-            fake_img = interp(fake_img)
+            fake_img = interp2(fake_img)
             fake_img = activation_tanh(fake_img)
 
             fake_img_from_labels = Gis(make_one_hot(real_segmentation, args.dataset, args.gpu_ids).float()).detach()
-            fake_img_from_labels = interp(fake_img_from_labels)
+            fake_img_from_labels = interp2(fake_img_from_labels)
             fake_img_from_labels = activation_tanh(fake_img_from_labels)
             fake_label_regenerated = Gsi(fake_img_from_labels).detach()
             fake_label_regenerated = interp(fake_label_regenerated)
