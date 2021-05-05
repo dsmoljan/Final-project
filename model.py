@@ -42,7 +42,7 @@ class supervised_model(object):
         elif args.dataset == 'acdc':
             self.n_channels = 4
         elif args.dataset == 'ortopanograms':
-            self.n_channels = 1 #trenutno samo zubi i pozdaina
+            self.n_channels = 2 #trenutno samo zubi i pozdaina
 
         # Define the network 
         self.Gsi = define_Gen(input_nc=3, output_nc=self.n_channels, ngf=args.ngf, netG='deeplab', norm=args.norm,

@@ -359,7 +359,7 @@ def make_one_hot(labels, dataname, gpu_id):
     elif dataname == 'acdc':
         C = 4
     elif dataname == 'ortopanograms':
-        C = 1
+        C = 2
     else:
         raise NotImplementedError
 
