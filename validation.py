@@ -28,7 +28,7 @@ def validation(args):
     elif args.dataset == 'acdc':
         n_channels = 4
     elif args.dataset == 'ortopanograms':
-        n_channels = 2
+        n_channels = 1
 
     transform = get_transformation((args.crop_height, args.crop_width), resize=True, dataset=args.dataset)
 

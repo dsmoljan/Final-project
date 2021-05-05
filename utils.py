@@ -359,7 +359,7 @@ def make_one_hot(labels, dataname, gpu_id):
     elif dataname == 'acdc':
         C = 4
     elif dataname == 'ortopanograms':
-        C = 2
+        C = 1
     else:
         raise NotImplementedError
 
@@ -423,9 +423,9 @@ class runningScore(object):
         mean_iu = np.nanmean(iu)
         # freq = hist.sum(axis=1) / hist.sum()
         # fwavacc = (freq[freq > 0] * iu[freq > 0]).sum()
-        if self.dataset == 'voc2012' or self.dataset == 'cityscapes' or self.dataset == 'ortopanograms':
+        if self.dataset == 'voc2012' or self.dataset == 'cityscapes':
             cls_iu = dict(zip(range(self.n_classes-1), iu))
-        elif self.dataset == 'acdc':
+        elif self.dataset == 'acdc' or self.dataset == 'ortopanograms':
             cls_iu = dict(zip(range(self.n_classes), iu))
 
         return (

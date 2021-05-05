@@ -225,7 +225,7 @@ class semisuper_cycleGAN(object):
         elif args.dataset == 'acdc':
             self.n_channels = 4
         elif args.dataset == 'ortopanograms':
-            self.n_channels = 2 #za početak samo razlikujemo pozadinu i zube
+            self.n_channels = 1 #za početak samo razlikujemo pozadinu i zube
       
         print("Postavljam broj kanala na: ", end = "")
         print(str(self.n_channels))
