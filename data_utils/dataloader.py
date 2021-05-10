@@ -137,6 +137,10 @@ class OrtoDataset(Dataset):
             if self.transformation:
                 img = self.transformation['img'](img)
 
+            f = open("./logs/log.txt", "a")
+            f.write("Koristim neoznačenu sliku: " + self.imgs[index] + "\n")
+            f.close()
+
             # print("Vrijednosti slike sa RGB: " + np.unique(img.numpy()))
             return img, self.imgs[index]
         else:
@@ -208,8 +212,8 @@ class OrtoDataset(Dataset):
             # ove 3 linije koristi ako hoce� provjeriti je li ucitava gt slike dobro, tj. spaja li ih dobro u jednu sliku
             new_img = gt.detach().squeeze().cpu().numpy()
             new_img = utils.colorize_mask(new_img, "ortopanograms", self.ortopanograms_classes)
-            new_img.save(os.path.join(self.imgs[index] + '.png'))
-            print("Spremam sliku " + self.imgs[index] + ".png")
+            new_img.save(os.path.join("original_gt/" + self.imgs[index] + '.png'))
+            #print("Spremam sliku " + self.imgs[index] + ".png")
 
             # ovdje ti može baciti grešku, jer će gt u ovom trenutku već biti tenzor
             if self.augmentation is not None:
