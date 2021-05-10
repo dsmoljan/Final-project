@@ -24,7 +24,7 @@ Class for CycleGAN with train() as a member function
 root = '../data/VOC2012'
 root_cityscapes = "../data/Cityscape"
 root_acdc = '../data/ACDC'
-root_ortopanograms = 'D:\cycleGAN segmentacija zuba podaci\data\Ortopanograms'
+root_ortopanograms = '../../data/Ortopanograms'
 
 ### The location for tensorboard visualizations
 tensorboard_loc = './tensorboard_results/first_run'
