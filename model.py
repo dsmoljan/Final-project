@@ -435,7 +435,7 @@ class semisuper_cycleGAN(object):
                 # Forward pass through generators
                 ##################################################
                 fake_img = self.Gis(make_one_hot(l_gt, args.dataset,
-                                                 args.gpu_ids).float(), args.ortopanograms_classes)  # mislim da ovdje make_one_hot iz osnovne slike radi novi vektor sa odgovarajućim dimemnzijama, znači u svojem kodu ćeš to morati maknuti
+                                                 args.gpu_ids, args.ortopanograms_classes).float())  # mislim da ovdje make_one_hot iz osnovne slike radi novi vektor sa odgovarajućim dimemnzijama, znači u svojem kodu ćeš to morati maknuti
                 fake_gt = self.Gsi(
                     unl_img.float())  ### having 21 channels                #tako da, ako bi ti odmah u svojem modelu stvorio vektor sa 40 ili koliko kanala, onda samo makneš make_one_hot i u ovu funkciju pošalješ taj svoj tenzor
                 lab_gt = self.Gsi(l_img)  ### having 21 channels
@@ -652,7 +652,7 @@ class semisuper_cycleGAN(object):
                 fake_img = self.interp(fake_img)
                 # fake_img = self.activation_tanh(fake_img)
 
-                fake_img_from_labels = self.Gis(make_one_hot(val_gt, args.dataset, args.gpu_ids).float(), args.ortopanograms_classes).detach()
+                fake_img_from_labels = self.Gis(make_one_hot(val_gt, args.dataset, args.gpu_ids, args.ortopanograms_classes).float()).detach()
                 fake_img_from_labels = self.interp(fake_img_from_labels)
                 # fake_img_from_labels = self.activation_tanh(fake_img_from_labels)
                 fake_label_regenerated = self.Gsi(fake_img_from_labels).detach()
