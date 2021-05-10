@@ -138,7 +138,7 @@ class OrtoDataset(Dataset):
                 img = self.transformation['img'](img)
 
             f = open("./logs/log.txt", "a")
-            f.write("Koristim neoznačenu sliku: " + self.imgs[index] + "\n")
+            f.write("Koristim neoznacenu sliku: " + self.imgs[index] + "\n")
             f.close()
 
             # print("Vrijednosti slike sa RGB: " + np.unique(img.numpy()))
