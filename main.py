@@ -43,6 +43,11 @@ def get_args():
     parser.add_argument('--gen_net', type=str, default='deeplab')
     parser.add_argument('--dis_net', type=str, default='fc_disc')
     parser.add_argument('--unlabeled_ratio', type=float, default=1)
+    #određuje koliko klasa će se segmentirati za ortopanograme
+    #2 - samo pozadina i zubi
+    #3 - pozadina, gornji zubi, donji zubi
+    #33 - pozadina, svaki zub zasebno
+    parser.add_argument('--ortopanograms_classes', type=int, default=2)
     args = parser.parse_args()
     return args
 
@@ -66,6 +71,9 @@ def main():
     elif args.dataset == 'cityscapes':
       args.crop_height = 512
       args.crop_width = 1024
+    elif args.dataset == 'ortopanograms':
+        args.crop_height = 200
+        args.crop_width = 400
 
   if args.training:
     if args.model == "semisupervised_cycleGAN":

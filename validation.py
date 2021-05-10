@@ -28,7 +28,7 @@ def validation(args):
     elif args.dataset == 'acdc':
         n_channels = 4
     elif args.dataset == 'ortopanograms':
-        n_channels = 1
+        n_channels = args.ortopanogram_classes
 
     transform = get_transformation((args.crop_height, args.crop_width), resize=True, dataset=args.dataset)
 
@@ -86,7 +86,7 @@ def validation(args):
             prediction = seg_map.data.max(1)[1].squeeze_(1).cpu().numpy()  ### To convert from 22 --> 1 channel
             for j in range(prediction.shape[0]):
                 new_img = prediction[j]  ### Taking a particular image from the batch
-                new_img = utils.colorize_mask(new_img, args.dataset)  ### So as to convert it back to a paletted image
+                new_img = utils.colorize_mask(new_img, args.dataset, args.ortopanograms_classes)  ### So as to convert it back to a paletted image
 
                 ### Now the new_img is PIL.Image
                 new_img.save(os.path.join(args.validation_dir + '/supervised/' + image_name[j] + '.png'))
@@ -116,11 +116,11 @@ def validation(args):
             seg_map = interp(seg_map)
             seg_map = activation_softmax(seg_map)
             fake_img = Gis(seg_map).detach()
-            fake_img = interp2(fake_img)
+            fake_img = interp(fake_img)
             fake_img = activation_tanh(fake_img)
 
-            fake_img_from_labels = Gis(make_one_hot(real_segmentation, args.dataset, args.gpu_ids).float()).detach()
-            fake_img_from_labels = interp2(fake_img_from_labels)
+            fake_img_from_labels = Gis(make_one_hot(real_segmentation, args.dataset, args.gpu_ids).float(), args.ortopanograms_classes).detach()
+            fake_img_from_labels = interp(fake_img_from_labels)
             fake_img_from_labels = activation_tanh(fake_img_from_labels)
             fake_label_regenerated = Gsi(fake_img_from_labels).detach()
             fake_label_regenerated = interp(fake_label_regenerated)
@@ -151,10 +151,10 @@ def validation(args):
 
             for j in range(prediction.shape[0]):
                 new_img = prediction[j]  ### Taking a particular image from the batch
-                new_img = utils.colorize_mask(new_img, args.dataset)  ### So as to convert it back to a paletted image
+                new_img = utils.colorize_mask(new_img, args.dataset, args.ortopanograms_classes)  ### So as to convert it back to a paletted image
 
                 regen_label = fake_regenerated_label[j]
-                regen_label = utils.colorize_mask(regen_label, args.dataset)
+                regen_label = utils.colorize_mask(regen_label, args.dataset, args.ortopanograms_classes)
 
                 ### Now the new_img is PIL.Image
                 new_img.save(
