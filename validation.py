@@ -28,7 +28,7 @@ def validation(args):
     elif args.dataset == 'acdc':
         n_channels = 4
     elif args.dataset == 'ortopanograms':
-        n_channels = args.ortopanogram_classes
+        n_channels = args.ortopanograms_classes
 
     transform = get_transformation((args.crop_height, args.crop_width), resize=True, dataset=args.dataset)
 
@@ -41,7 +41,7 @@ def validation(args):
     elif args.dataset == 'acdc':
         val_set = ACDCDataset(root_path=root_acdc, name='val', ratio=0.5, transformation=transform, augmentation=None)
     elif args.dataset == 'ortopanograms':
-        val_set = OrtoDataset(root_path=root_ortopanograms, name='val', ratio=0.5, transformation=transform,
+        val_set = OrtoDataset(args.ortopanograms_classes, root_path=root_ortopanograms, name='val', ratio=1, transformation=transform,
                               augmentation=None)
 
     val_loader = DataLoader(val_set, batch_size=args.batch_size, shuffle=False)
@@ -119,7 +119,7 @@ def validation(args):
             fake_img = interp(fake_img)
             fake_img = activation_tanh(fake_img)
 
-            fake_img_from_labels = Gis(make_one_hot(real_segmentation, args.dataset, args.gpu_ids).float(), args.ortopanograms_classes).detach()
+            fake_img_from_labels = Gis(make_one_hot(real_segmentation, args.dataset, args.gpu_ids, args.ortopanograms_classes).float()).detach()
             fake_img_from_labels = interp(fake_img_from_labels)
             fake_img_from_labels = activation_tanh(fake_img_from_labels)
             fake_label_regenerated = Gsi(fake_img_from_labels).detach()

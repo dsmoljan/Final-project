@@ -122,10 +122,15 @@ class supervised_model(object):
             val_loader = DataLoader(val_set, batch_size=self.args.batch_size, shuffle=True, drop_last=True)
         elif self.args.dataset == 'ortopanograms':
             # namjerno ostavljam ratio 0.5 kako bi uzeo samo 150 slika, tako da mogu bolje usporediti modele
-            labeled_set = OrtoDataset(root_path=root_ortopanograms, name='label', ratio=0.5, transformation=transform,
+            labeled_set = OrtoDataset(self.args.ortopanograms_classes, root_path=root_ortopanograms, name='label',
+                                      ratio=self.args.unlabeled_ratio,
+                                      transformation=transform,
                                       augmentation=None)
-            val_set = OrtoDataset(root_path=root_ortopanograms, name='val', ratio=0.5, transformation=transform,
+            val_set = OrtoDataset(self.args.ortopanograms_classes, root_path=root_ortopanograms, name='val', ratio=1,
+                                  transformation=transform,
                                   augmentation=None)
+
+
             labeled_loader = DataLoader(labeled_set, batch_size=self.args.batch_size, shuffle=True, drop_last=True)
             val_loader = DataLoader(val_set, batch_size=self.args.batch_size, shuffle=True, drop_last=True)
 
