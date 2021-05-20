@@ -206,6 +206,8 @@ class OrtoDataset(Dataset):
                             tmp_gt[tmp_gt != 0] = 1
                         elif (name in self.upper_teeth):
                             tmp_gt[tmp_gt != 0] = 2
+                        else:
+                            raise RuntimeError("Error! Unexpected tooth value!")
 
                         gt = gt | tmp_gt
                         # na kraju imamo jednokanalni tenzor, u kojem imamo nule na mjestima gdje su pikseli pozadine, 1 gdje su pikseli donjih zuba, te 2 gdje su pikseli gornjih zuba
