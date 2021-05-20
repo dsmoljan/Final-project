@@ -44,7 +44,7 @@ def test(args):
     elif args.dataset == 'acdc':
         test_set = ACDCDataset(root_path=root_acdc, name='test', ratio=0.5, transformation=transform, augmentation=None)
     elif args.dataset == 'ortopanograms':
-        test_set = OrtoDataset(root_path=root_ortopanograms, name='test', ratio=0.5, transformation=transform,
+        test_set = OrtoDataset(args.ortopanograms_classes, root_path=root_ortopanograms, name='test', ratio=0.5, transformation=transform,
                                augmentation=None)
     elif args.dataset == 'ortopanograms_test_output':
         test_set = OrtoDataset(root_path=root_ortopanograms, name='test', ratio=1, transformation=transform,
