@@ -80,13 +80,22 @@ def test(args):
 
             test_img, test_gt = utils.cuda([test_img,test_gt], args.gpu_ids)
             seg_map = Gsi(test_img)
+            seg_map = interp(seg_map)  # samo povecavamo sliku, slika koju dobijemo iz GSI je onak 20xx40
             seg_map = activation_softmax(seg_map)
-            #seg_map = interp(seg_map)  # samo povecavamo sliku, slika koju dobijemo iz GSI je onak 20xx40
 
             prediction = seg_map.data.max(1)[1].squeeze_(1).squeeze_(
                 0).cpu().numpy()  ### To convert from 22 --> 1 channel
             test_gt = test_gt.squeeze().data.cpu().numpy()
             running_metrics_test.update(test_gt, prediction)
+
+            # outputs = self.Gsi(val_img)
+            # outputs = self.interp_val(outputs)
+            # outputs = self.activation_softmax(outputs)
+            #
+            # pred = outputs.data.max(1)[1].cpu().numpy()
+            # gt = val_gt.squeeze().data.cpu().numpy()
+            #
+            # self.running_metrics_val.update(gt, pred)
             for j in range(prediction.shape[0]):
                 new_img = prediction[j]  ### Taking a particular image from the batch
                 new_img = utils.colorize_mask(new_img, args.dataset,
