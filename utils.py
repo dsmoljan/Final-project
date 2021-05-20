@@ -406,6 +406,7 @@ def make_one_hot(labels, dataname, gpu_id, ortopanograms_classes = 2):
     else:
         raise NotImplementedError
 
+    print("Broj klasa u make one hot: " + str(C))
     labels = labels.long()
     try:
         # ovdje radi one hot sliku koja ima isto batcheva kao originalna (to znaci labels.size(0), C kanala, isto redaka i stupaca kao i originalna (labels.size(2) i labels.size(3))
