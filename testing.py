@@ -125,7 +125,6 @@ def test(args):
 
         ### run
         Gsi.eval()
-        Gis.eval()
 
         for i, (test_img, test_gt, image_name) in enumerate(test_loader):
             test_img, test_gt = utils.cuda([test_img,test_gt], args.gpu_ids)
