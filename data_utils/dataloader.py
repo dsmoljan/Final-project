@@ -209,10 +209,17 @@ class OrtoDataset(Dataset):
                         else:
                             raise RuntimeError("Error! Unexpected tooth value!")
 
-                        gt = gt | tmp_gt
+                        gt = gt | tmp_gt #možda ovo zbraja :)
+
+                        #dap dap dap ovo ti zbraja
+                        #i kad imaš preklapanje između piksela koji čine klasu 1 i 2
+                        #on ti ih zbroji
+                        #ok dogovor - ovo napiši u radu!
+                        #kad imaš preklapanje, pridjeljuješ to gornjim zubima, dakle 2
                         print("Vrijednosti gt-a iz dijela za 3 klase: " + str(np.unique(gt.numpy())))
                         # na kraju imamo jednokanalni tenzor, u kojem imamo nule na mjestima gdje su pikseli pozadine, 1 gdje su pikseli donjih zuba, te 2 gdje su pikseli gornjih zuba
                         # a mislim da će make_one_hot to pretvoriti u 3 kanalni tenzor
+                        gt[gt == 3] = 2
                 # pozadina, svaki zub je klasa za sebe
                 elif (self.ortopanograms_classes == 33):
                     if (len(name) == 2 or ((len(name)) == 5 and "#" in name)):
