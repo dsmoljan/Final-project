@@ -210,6 +210,7 @@ class OrtoDataset(Dataset):
                             raise RuntimeError("Error! Unexpected tooth value!")
 
                         gt = gt | tmp_gt
+                        print("Vrijednosti gt-a iz dijela za 3 klase: " + str(np.unique(gt.numpy())))
                         # na kraju imamo jednokanalni tenzor, u kojem imamo nule na mjestima gdje su pikseli pozadine, 1 gdje su pikseli donjih zuba, te 2 gdje su pikseli gornjih zuba
                         # a mislim da će make_one_hot to pretvoriti u 3 kanalni tenzor
                 # pozadina, svaki zub je klasa za sebe
