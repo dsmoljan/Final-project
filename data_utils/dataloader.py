@@ -207,7 +207,7 @@ class OrtoDataset(Dataset):
                         elif (name in self.upper_teeth):
                             tmp_gt[tmp_gt != 0] = 2
                         else:
-                            raise RuntimeError("Error! Unexpected tooth value - " + name)
+                            raise RuntimeError("Error! Unexpected tooth value - " + name + ". Error happended while processing image with name:" + str(self.imgs[index]))
 
                         gt = gt | tmp_gt #možda ovo zbraja :)
 
