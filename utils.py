@@ -418,7 +418,7 @@ def make_one_hot(labels, dataname, gpu_id, ortopanograms_classes = 2):
     target = one_hot.scatter_(1, labels.data, 1)
     print("Dimenzije tenzora iz one hot: " + str(target.size()))
     print("Unique vrijednosti tenzora:")
-    print(np.unique(target.round().numpy()))
+    print(np.unique(target.cpu().round().numpy()))
 
     return target
 
