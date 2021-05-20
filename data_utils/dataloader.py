@@ -93,6 +93,8 @@ class OrtoDataset(Dataset):
         if self.name == 'test':
             test_imgs = pd.read_table(os.path.join(self.root_path, 'imagelists', 'test.txt')).values.reshape(-1)
             # test_imgs = np.array(test_imgs)
+        if self.name == 'production':
+            production_imgs = pd.read_table(os.path.join(self.root_path, 'imagelists', 'production.txt')).values.reshape(-1)
 
         # mislim da nam self.imgs onda postane popis slika s kojima radimo, bez nastavka .ora
         if self.name == 'label':
@@ -103,6 +105,8 @@ class OrtoDataset(Dataset):
             self.imgs = val_imgs
         elif self.name == 'test':
             self.imgs = test_imgs
+        elif self.name == 'production':
+            self.imgs = production_imgs
         else:
             raise ('{} not defined'.format(self.name))
 
@@ -110,8 +114,10 @@ class OrtoDataset(Dataset):
 
     # This method loads a single (input, label) pair from the disk and performs whichever preprocessing the data requires. Pod label se valjda misli na ground truth?
     def __getitem__(self, index):
-        if self.name == 'test':
-            img_path = os.path.join(self.root_path, 'test', self.imgs[
+        #ovo je neka buduća ideja, ukoliko bi se kod ikad želio pustiti u "produkciju", onda
+        #bi samo primao neoznačene slike, bez ground trutha, bez ičega
+        if self.name == 'production':
+            img_path = os.path.join(self.root_path, 'production', self.imgs[
                 index] + '.png')  # pošto se radi o test datasetu, učitavamo samo .jpg, odnosno sliku, bez njene segmentacijske maske
 
             img = Image.open(img_path)  # .convert('RGB')
@@ -143,6 +149,10 @@ class OrtoDataset(Dataset):
 
             # print("Vrijednosti slike sa RGB: " + np.unique(img.numpy()))
             return img, self.imgs[index]
+        #dakle, ako se radi o training, validation ili testing
+        #validation i testing su praktičiki identičan kod, samo što su različiti skupovi podataka
+        #validation se koristi tijekom treniranja za donošenje odluke o updatanju modela
+        #dok se training koristi nakon završetka treniranja modela, za procjenu uspješnosti modela
         else:
             ora_path = os.path.join(self.root_path, 'training',
                                     # u mapi /training nalaze se i training i validation slike, uzimaju se prema onom što piše u traing.txt, odnosno validation.txt
