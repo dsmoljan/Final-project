@@ -63,6 +63,11 @@ def test(args):
 
     if (args.model == 'supervised_model'):
 
+        print("Running test for supervised model")
+
+        interp = nn.Upsample((args.crop_height, args.crop_width), mode='bilinear', align_corners=True)
+
+
         ### loading the checkpoint
         try:
             ckpt = utils.load_checkpoint('%s/latest_supervised_model.ckpt' % (args.checkpoint_dir))
@@ -73,13 +78,17 @@ def test(args):
 
         ### run
         Gsi.eval()
-        for i, (image_test, image_name) in enumerate(test_loader):
-            image_test = utils.cuda(image_test, args.gpu_ids)
-            seg_map = Gsi(image_test)
+        for i, (image_test, test_gt, image_name) in enumerate(test_loader):
+
+            test_img, test_gt = utils.cuda([test_img,test_gt], args.gpu_ids)
+            seg_map = Gsi(test_img)
             seg_map = activation_softmax(seg_map)
+            #seg_map = interp(seg_map)  # samo povecavamo sliku, slika koju dobijemo iz GSI je onak 20xx40
 
             prediction = seg_map.data.max(1)[1].squeeze_(1).squeeze_(
                 0).cpu().numpy()  ### To convert from 22 --> 1 channel
+            test_gt = test_gt.squeeze().data.cpu().numpy()
+            running_metrics_test.update(test_gt, prediction)
             for j in range(prediction.shape[0]):
                 new_img = prediction[j]  ### Taking a particular image from the batch
                 new_img = utils.colorize_mask(new_img, args.dataset,
@@ -89,8 +98,12 @@ def test(args):
                 new_img.save(os.path.join(args.results_dir + '/supervised/' + image_name[j] + '.png'))
 
             print('Epoch-', str(i + 1), ' Done!')
+        print("Test mIOU is: ", score["Mean IoU : \t"])
 
     elif (args.model == 'semisupervised_cycleGAN'):
+
+        print("Running test for semisupervised model")
+
         interp = nn.Upsample((args.crop_height, args.crop_width), mode='bilinear', align_corners=True)
 
         ### loading the checkpoint
