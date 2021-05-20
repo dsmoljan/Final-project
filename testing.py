@@ -116,7 +116,7 @@ def test(args):
 
         ### loading the checkpoint
         try:
-            ckpt = utils.load_checkpoint('%s/latest_supervised_model.ckpt' % (args.checkpoint_dir))
+            ckpt = utils.load_checkpoint('%s/latest_semisuper_cycleGAN.ckpt' % (args.checkpoint_dir))
             Gsi.load_state_dict(ckpt['Gsi'])
             best_iou = ckpt['best_iou']
 
