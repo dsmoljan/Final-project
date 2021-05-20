@@ -27,7 +27,7 @@ def test(args):
     elif args.dataset == 'acdc':
         n_channels = 4
     elif args.dataset == 'ortopanograms':
-        n_channels = 1
+        n_channels = 2
     elif args.dataset == 'ortopanograms_test_output':
         n_channels = 2
 
@@ -55,8 +55,6 @@ def test(args):
     Gsi = define_Gen(input_nc=3, output_nc=n_channels, ngf=args.ngf, netG='deeplab',
                      norm=args.norm, use_dropout=not args.no_dropout, gpu_ids=args.gpu_ids)
 
-    Gis = define_Gen(input_nc=n_channels, output_nc=3, ngf=args.ngf, netG='deeplab',
-                     norm=args.norm, use_dropout=not args.no_dropout, gpu_ids=args.gpu_ids)
 
     ### activation_softmax
     activation_softmax = nn.Softmax2d()
@@ -78,7 +76,7 @@ def test(args):
 
         ### run
         Gsi.eval()
-        for i, (image_test, test_gt, image_name) in enumerate(test_loader):
+        for i, (test_img, test_gt, image_name) in enumerate(test_loader):
 
             test_img, test_gt = utils.cuda([test_img,test_gt], args.gpu_ids)
             seg_map = Gsi(test_img)
@@ -98,6 +96,7 @@ def test(args):
                 new_img.save(os.path.join(args.results_dir + '/supervised/' + image_name[j] + '.png'))
 
             print('Epoch-', str(i + 1), ' Done!')
+        score, class_iou = running_metrics_test.get_scores()
         print("Test mIOU is: ", score["Mean IoU : \t"])
 
     elif (args.model == 'semisupervised_cycleGAN'):
