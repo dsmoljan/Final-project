@@ -129,8 +129,8 @@ def test(args):
         for i, (test_img, test_gt, image_name) in enumerate(test_loader):
             test_img, test_gt = utils.cuda([test_img,test_gt], args.gpu_ids)
             seg_map = Gsi(test_img)
-            seg_map = activation_softmax(seg_map)
             seg_map = interp(seg_map)  # samo povecavamo sliku, slika koju dobijemo iz GSI je onak 20xx40
+            seg_map = activation_softmax(seg_map)
 
             prediction = seg_map.data.max(1)[1].squeeze_(1).squeeze_(
                 0).cpu().numpy()  ### To convert from 22 --> 1 channel
