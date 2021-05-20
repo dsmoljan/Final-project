@@ -416,6 +416,7 @@ def make_one_hot(labels, dataname, gpu_id, ortopanograms_classes = 2):
     except:
         one_hot = torch.FloatTensor(labels.size(0), C, labels.size(2), labels.size(3)).zero_()
     target = one_hot.scatter_(1, labels.data, 1)
+    print("Dimenzije tenzora iz one hot: " + str(target.size()))
 
     return target
 

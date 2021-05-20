@@ -216,6 +216,7 @@ class OrtoDataset(Dataset):
                         name = name[0:2]
                         tmp_gt = ora_image['root']['childs'][i]['raster'].convert('L')
                         tmp_gt = self.transformation['gt'](tmp_gt)
+
                         tmp_gt[tmp_gt != 0] = self.teeth_class_map[name]
                         gt = gt | tmp_gt
 
