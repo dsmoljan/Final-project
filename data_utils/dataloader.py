@@ -235,6 +235,7 @@ class OrtoDataset(Dataset):
                 # gt = self.transformation['gt'](gt) #mičemo ovu transformaciju jer smo je praktički gore več napravili
 
             # print("Vrijednosti slike sa RGB: " + str(np.unique(img.numpy())))
+            print("Vrijednosti gt-a iz dataloadera: " + str(np.unique(gt.numpy())))
             return img, gt, self.imgs[index]
 
     # returns an integer describing the full length of the dataset
