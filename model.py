@@ -302,7 +302,9 @@ class semisuper_cycleGAN(object):
         self.MSE = nn.MSELoss()
         self.L1 = nn.L1Loss()
         self.CE = nn.CrossEntropyLoss()
+        self.BCE = nn.BCEWithLogitsLoss()
         self.activation_softmax = nn.Softmax2d()
+        self.activation_sigmoid = nn.Sigmoid()
         self.activation_tanh = nn.Tanh()
         self.activation_sigmoid = nn.Sigmoid()
 
@@ -439,7 +441,7 @@ class semisuper_cycleGAN(object):
 
                 # Forward pass through generators
                 ##################################################
-                fake_img = self.Gis(make_one_hot(l_gt, args.dataset,args.gpu_ids, args.ortopanograms_classes).float())  # mislim da ovdje make_one_hot iz osnovne slike radi novi vektor sa odgovarajućim dimemnzijama, znači u svojem kodu ćeš to morati maknuti
+                fake_img = self.Gis(l_gt.float())  #maknut make one hot
                 fake_gt = self.Gsi(unl_img.float())  ### having 21 channels                #tako da, ako bi ti odmah u svojem modelu stvorio vektor sa 40 ili koliko kanala, onda samo makneš make_one_hot i u ovu funkciju pošalješ taj svoj tenzor
                 lab_gt = self.Gsi(l_img)  ### having 21 channels
 
@@ -452,12 +454,17 @@ class semisuper_cycleGAN(object):
                 # fake_gt = fake_gt.unsqueeze(1)   ### will get into 1 channel only
                 # fake_gt = make_one_hot(fake_gt, args.dataset, args.gpu_ids)
 
-                lab_loss_CE = self.CE(lab_gt,
-                                      l_gt.squeeze(1))  # squeeze vraća tenzor sa svim inputima veličine 1 maknutima
+                lab_loss_BCE = self.BCE(lab_gt, l_gt)
+                #lab_loss_CE = self.CE(lab_gt,l_gt.squeeze(1))  # squeeze vraća tenzor sa svim inputima veličine 1 maknutima
 
                 ### Again applying activations
-                lab_gt = self.activation_softmax(lab_gt)
-                fake_gt = self.activation_softmax(fake_gt)
+                lab_gt = self.activation_sigmoid(lab_gt)
+                fake_gt = self.activation_sigmoid(fake_gt)
+                #staro
+                #--------------
+                #lab_gt = self.activation_softmax(lab_gt)
+                #fake_gt = self.activation_softmax(fake_gt)
+                #--------------
                 # fake_gt = fake_gt.data.max(1)[1].squeeze_(1).squeeze_(0)
                 # fake_gt = fake_gt.unsqueeze(1)
                 # fake_gt = make_one_hot(fake_gt, args.dataset, args.gpu_ids)
@@ -475,8 +482,13 @@ class semisuper_cycleGAN(object):
                 ### This is for the case of the new loss between the recon_img from resnet and deeplab network
                 resnet_fake_gt = self.old_Gsi(unl_img.float())
                 resnet_lab_gt = self.old_Gsi(l_img)
-                resnet_lab_gt = self.activation_softmax(resnet_lab_gt)
-                resnet_fake_gt = self.activation_softmax(resnet_fake_gt)
+                resnet_lab_gt = self.activation_sigmoid(resnet_lab_gt)
+                resnet_fake_gt = self.activation_sigmoid(resnet_fake_gt)
+                #staro
+                #----------
+                # resnet_lab_gt = self.activation_softmax(resnet_lab_gt)
+                # resnet_fake_gt = self.activation_softmax(resnet_fake_gt)
+                #----------
                 resnet_recon_img = self.old_Gis(resnet_fake_gt.float())
                 resnet_recon_lab_img = self.old_Gis(resnet_lab_gt.float())
 
@@ -490,9 +502,9 @@ class semisuper_cycleGAN(object):
                 resnet_fake_img_dis = self.old_Di(recon_img)
 
                 ### For passing different type of input to Ds
-                fake_gt_discriminator = fake_gt.data.max(1)[1].squeeze_(1).squeeze_(0)
-                fake_gt_discriminator = fake_gt_discriminator.unsqueeze(1)
-                fake_gt_discriminator = make_one_hot(fake_gt_discriminator, args.dataset, args.gpu_ids, args.ortopanograms_classes)
+                # fake_gt_discriminator = fake_gt.data.max(1)[1].squeeze_(1).squeeze_(0)
+                # fake_gt_discriminator = fake_gt_discriminator.unsqueeze(1)
+                # fake_gt_discriminator = make_one_hot(fake_gt_discriminator, args.dataset, args.gpu_ids, args.ortopanograms_classes)
                 fake_gt_dis = self.Ds(fake_gt_discriminator.float())
                 # lab_gt_dis = self.Ds(lab_gt)
 
@@ -509,7 +521,9 @@ class semisuper_cycleGAN(object):
                 resnet_img_cycle_loss = self.MSE(resnet_fake_img_dis, real_label_img)
                 # img_cycle_loss = self.L1(recon_img, unl_img)
                 # img_cycle_loss_perceptual = perceptual_loss(recon_img, unl_img, args.gpu_ids)
-                gt_cycle_loss = self.CE(recon_gt, l_gt.squeeze(1))
+                gt_cycle_loss = self.BCE(recon_gt, l_gt)
+                #stari
+                #gt_cycle_loss = self.CE(recon_gt, l_gt.squeeze(1))
                 # lab_img_cycle_loss = self.L1(recon_lab_img, l_img) * args.lamda
 
                 # Total generators losses
@@ -518,7 +532,9 @@ class semisuper_cycleGAN(object):
                 lab_loss_MSE = self.L1(fake_img, l_img)
                 # lab_loss_perceptual = perceptual_loss(fake_img, l_img, args.gpu_ids)
 
-                fullsupervisedloss = args.lab_CE_weight * lab_loss_CE + args.lab_MSE_weight * lab_loss_MSE
+                fullsupervisedloss = args.lab_BCE_weight * lab_loss_BCE + args.lab_MSE_weight * lab_loss_MSE
+                #staro
+                #fullsupervisedloss = args.lab_CE_weight * lab_loss_CE + args.lab_MSE_weight * lab_loss_MSE
 
                 unsupervisedloss = args.adversarial_weight * (
                             img_gen_loss + gt_gen_loss) + resnet_img_cycle_loss + gt_cycle_loss * args.lamda_gt
