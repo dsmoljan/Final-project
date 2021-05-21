@@ -211,10 +211,10 @@ class OrtoDataset(Dataset):
 
                         if (name in self.lower_teeth):
                             tmp_gt[tmp_gt != 0] = 1
-                            tmp_lower | tmp_gt
+                            tmp_lower = tmp_lower | tmp_gt
                         elif (name in self.upper_teeth):
                             tmp_gt[tmp_gt != 0] = 1
-                            tmp_upper |tmp_gt
+                            tmp_lower = tmp_upper |tmp_gt
 
                         #gt = gt | tmp_gt #možda ovo zbraja :)
 
@@ -233,7 +233,7 @@ class OrtoDataset(Dataset):
                 tmp_upper[tmp_upper != 0] = 1
                 #https://deeplizard.com/learn/video/kF2AlpykJGY
                 #u ovom obliku koda nemamo pozadinu kao jednu klasu, pa je broj klasa ustvari 2
-                gt = torch.stack((tmp_lower, tmp_upper), dim = 0)
+                gt = torch.stack((tmp_lower, tmp_upper), dim = 1)
                 print("Gt shape: " + str(gt.size()))
 
             # pozadina, svaki zub je klasa za sebe
@@ -252,10 +252,18 @@ class OrtoDataset(Dataset):
 
             # ove 3 linije koristi ako hoce� provjeriti je li ucitava gt slike dobro, tj. spaja li ih dobro u jednu sliku
             #outputs.data.max(1)[1].cpu().numpy()
-            new_img = gt.data.max(1)[1].squeeze_(1).squeeze_(
+            new_img = gt.clone()
+            new_img = new_img.squeeze()
+            new_img = new_img.data.max(1)[1].squeeze_(1).squeeze_(
                 0).cpu().numpy()
             #new_img = gt.detach().squeeze().cpu().numpy()
-            new_img = utils.colorize_mask(new_img, "ortopanograms",2)
+            for j in range(new_img.shape[0]):
+                tmp_img = new_img[j]  ### Taking a particular image from the batch
+
+                tmp_img = utils.colorize_mask(tmp_img, "ortopanograms",2)
+                tmp_img.save(os.path.join("original_gt/" + self.imgs[index] + '.png'))
+
+            #new_img = utils.colorize_mask(new_img, "ortopanograms",2)
             #new_img = utils.colorize_mask(new_img, "ortopanograms", self.ortopanograms_classes)
             new_img.save(os.path.join("original_gt/" + self.imgs[index] + '.png'))
             #print("Spremam sliku " + self.imgs[index] + ".png")
