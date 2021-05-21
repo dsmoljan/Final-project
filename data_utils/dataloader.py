@@ -214,7 +214,7 @@ class OrtoDataset(Dataset):
                             tmp_lower = tmp_lower | tmp_gt
                         elif (name in self.upper_teeth):
                             tmp_gt[tmp_gt != 0] = 1
-                            tmp_lower = tmp_upper |tmp_gt
+                            tmp_lower = tmp_upper | tmp_gt
 
                         #gt = gt | tmp_gt #možda ovo zbraja :)
 
@@ -257,13 +257,8 @@ class OrtoDataset(Dataset):
             new_img = new_img.data.max(1)[1].squeeze_(1).squeeze_(
                 0).cpu().numpy()
             #new_img = gt.detach().squeeze().cpu().numpy()
-            for j in range(new_img.shape[0]):
-                tmp_img = new_img[j]  ### Taking a particular image from the batch
 
-                tmp_img = utils.colorize_mask(tmp_img, "ortopanograms",2)
-                tmp_img.save(os.path.join("original_gt/" + self.imgs[index] + '.png'))
-
-            #new_img = utils.colorize_mask(new_img, "ortopanograms",2)
+            new_img = utils.colorize_mask(new_img, "ortopanograms",2)
             #new_img = utils.colorize_mask(new_img, "ortopanograms", self.ortopanograms_classes)
             new_img.save(os.path.join("original_gt/" + self.imgs[index] + '.png'))
             #print("Spremam sliku " + self.imgs[index] + ".png")
