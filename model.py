@@ -153,7 +153,8 @@ class supervised_model(object):
                 lab_gt = self.interp(lab_gt)  ### To get the output of model same as labels
 
                 # CE losses
-                fullsupervisedloss = self.BCE(lab_gt, l_gt)
+                #jako pripazi na ovaj l_gt.float()
+                fullsupervisedloss = self.BCE(lab_gt, l_gt.float())
                 #fullsupervisedloss = self.CE(lab_gt, l_gt.squeeze(1))
 
                 fullsupervisedloss.backward()
