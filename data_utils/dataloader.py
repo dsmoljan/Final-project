@@ -184,7 +184,7 @@ class OrtoDataset(Dataset):
 
 
             # spajamo samo segmentacijske mape zubiju te pozadinu u jednu sliku/tensor -> one ili imaju duljinu imena 2 (npr. 17) ili imaju oblik poput 17 #1
-            if (self.ortopanograms_classes == 1):
+            if (self.ortopanograms_classes == 2):
                 # pozadina, zubi
                 for i in range(len(ora_image['root']['childs'])):
                     name = ora_image['root']['childs'][i]['name']
@@ -198,7 +198,7 @@ class OrtoDataset(Dataset):
                         # https://discuss.pytorch.org/t/combine-2-channels-of-an-image/75628/3
                         # kasnije kad ćeš imati više slika koristiti ćeš funkciju Relabel
             # pozadina, gornji zubi, donji zubi
-            elif (self.ortopanograms_classes == 2):
+            elif (self.ortopanograms_classes == 3):
                 tmp_lower = gt.clone()
                 tmp_upper = gt.clone()
                 for i in range(len(ora_image['root']['childs'])):
@@ -214,7 +214,7 @@ class OrtoDataset(Dataset):
                             tmp_lower = tmp_lower | tmp_gt
                         elif (name in self.upper_teeth):
                             tmp_gt[tmp_gt != 0] = 1
-                            tmp_lower = tmp_upper | tmp_gt
+                            tmp_upper = tmp_upper | tmp_gt
 
                         #gt = gt | tmp_gt #možda ovo zbraja :)
 
@@ -232,13 +232,26 @@ class OrtoDataset(Dataset):
                 tmp_lower[tmp_lower != 0] = 1
                 tmp_upper[tmp_upper != 0] = 1
                 #https://deeplizard.com/learn/video/kF2AlpykJGY
-                #u ovom obliku koda nemamo pozadinu kao jednu klasu, pa je broj klasa ustvari 2
-                gt = torch.stack((tmp_lower, tmp_upper), dim = 1)
+                #pozadina je ipak jedna od klasa, pa je broj klasa 3
+                tmp_lower_test = tmp_lower.clone()
+                tmp_upper_test = tmp_upper.clone()
+                tmp_lower_test[tmp_lower_test == 0] = 1
+                tmp_lower_test[tmp_lower_test != 0] = 0
+                tmp_upper_test[tmp_upper_test == 0] = 1
+                tmp_upper_test[tmp_upper_test != 0] = 0
+                gt = gt | tmp_lower_test | tmp_upper_test
+                gt[gt != 0] = 1
+                gt = torch.stack((gt,tmp_lower, tmp_upper), dim = 1)
+                #gt = gt.squeeze()
                 print("Gt shape: " + str(gt.size()))
+                print("tmp_lower shape: " + str(tmp_lower.size()))
+                #torch.set_printoptions(profile="full")
+                #print(gt)
+
 
             # pozadina, svaki zub je klasa za sebe
             #TODO: izmijeniti...
-            elif (self.ortopanograms_classes == 32):
+            elif (self.ortopanograms_classes == 33):
                 for i in range(len(ora_image['root']['childs'])):
                     name = ora_image['root']['childs'][i]['name']
                     if (len(name) == 2 or ((len(name)) == 5 and "#" in name)):
@@ -250,10 +263,10 @@ class OrtoDataset(Dataset):
                         gt = gt | tmp_gt
 
 
-            # ove 3 linije koristi ako hoce� provjeriti je li ucitava gt slike dobro, tj. spaja li ih dobro u jednu sliku
+            # ove 3 linije koristi ako hoce  provjeriti je li ucitava gt slike dobro, tj. spaja li ih dobro u jednu sliku
             #outputs.data.max(1)[1].cpu().numpy()
             new_img = gt.clone()
-            new_img = new_img.squeeze()
+            #new_img = new_img.squeeze()
             new_img = new_img.data.max(1)[1].squeeze_(1).squeeze_(
                 0).cpu().numpy()
             #new_img = gt.detach().squeeze().cpu().numpy()
@@ -262,6 +275,8 @@ class OrtoDataset(Dataset):
             #new_img = utils.colorize_mask(new_img, "ortopanograms", self.ortopanograms_classes)
             new_img.save(os.path.join("original_gt/" + self.imgs[index] + '.png'))
             #print("Spremam sliku " + self.imgs[index] + ".png")
+
+            gt = gt.squeeze()
 
             # ovdje ti može baciti grešku, jer će gt u ovom trenutku već biti tenzor
             if self.augmentation is not None:

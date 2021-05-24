@@ -24,6 +24,7 @@ def get_args():
     # parser.add_argument('--idt_coef', type=float, default=0.5)        
     # parser.add_argument('--omega', type=int, default=5)
     parser.add_argument('--lab_CE_weight', type=int, default=1)
+    parser.add_argument('--lab_BCE_weight', type=int, default=1)
     parser.add_argument('--lab_MSE_weight', type=int, default=1)
     parser.add_argument('--lab_perceptual_weight', type=int, default=0)
     parser.add_argument('--adversarial_weight', type=int, default=1.0)

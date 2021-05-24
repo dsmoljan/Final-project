@@ -25,9 +25,8 @@ acdc_palette = [0, 0, 0, 128, 64, 128, 70, 70, 70, 250, 170,
 # 0,0,0 -> pozadina
 # 255,0,0 -> zubi (crvena)
 
-ortopanograms_palette_two_classes = [0, 0, 0, 255, 255,
-                                     0]  # ova paleta koristi se za prikaz RGB slike u tensorboardu prilikom treniranja modela
-ortopanograms_palette_three_classes = [0, 0, 0, 255, 255, 0, 255, 0, 0]
+ortopanograms_palette_two_classes = [0, 255, 0, 255, 255, 0, 255, 0, 0]  # ova paleta koristi se za prikaz RGB slike u tensorboardu prilikom treniranja modela
+ortopanograms_palette_three_classes = [0, 255, 0, 255, 255, 0, 255, 0, 0]
 ortopanograms_palette_thirtythree_classes = [0, 0, 0, 147, 58, 22, 141, 2, 31, 94, 25, 20, 184, 15, 10, 66, 13, 9, 255,
                                              40, 0, 191, 10, 48, 202, 52, 51, 210, 31, 60, 180, 55, 87, 255, 8, 0, 126,
                                              25, 27, 234, 60, 83, 164, 90, 82, 128, 0, 0, 205, 92, 92,
