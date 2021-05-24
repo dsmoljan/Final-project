@@ -69,6 +69,7 @@ class supervised_model(object):
 
         self.CE = nn.CrossEntropyLoss()
         self.activation_softmax = nn.Softmax2d()
+        self.BCE = nn.BCEWithLogitsLoss()
         self.gsi_optimizer = torch.optim.Adam(self.Gsi.parameters(), lr=args.lr, betas=(0.9, 0.999))
 
         ### writer for tensorboard
@@ -152,7 +153,8 @@ class supervised_model(object):
                 lab_gt = self.interp(lab_gt)  ### To get the output of model same as labels
 
                 # CE losses
-                fullsupervisedloss = self.CE(lab_gt, l_gt.squeeze(1))
+                fullsupervisedloss = self.BCE(lab_gt, l_gt)
+                #fullsupervisedloss = self.CE(lab_gt, l_gt.squeeze(1))
 
                 fullsupervisedloss.backward()
                 self.gsi_optimizer.step()
@@ -174,7 +176,8 @@ class supervised_model(object):
                     outputs = self.activation_softmax(outputs)
 
                     pred = outputs.data.max(1)[1].cpu().numpy()
-                    gt = val_gt.squeeze().data.cpu().numpy()
+                    gt = val_gt.data.max(1)[1].squeeze_(1).squeeze_(0).cpu().numpy()
+                   # gt = val_gt.squeeze().data.cpu().numpy()
 
                     self.running_metrics_val.update(gt, pred)
 
@@ -191,7 +194,8 @@ class supervised_model(object):
                 fake = self.interp_val(fake)
             fake = self.activation_softmax(fake)
             fake_prediction = fake.data.max(1)[1].squeeze_(1).squeeze_(0).cpu().numpy()
-            val_gt = val_gt.cpu()
+            val_gt = val_gt.data.max(1)[1].squeeze_(1).squeeze_(0).cpu()
+            #val_gt = val_gt.cpu()
 
             ### display_tensor is the final tensor that will be displayed on tensorboard
             display_tensor = torch.zeros([fake.shape[0], 3, fake.shape[2], fake.shape[3]])
@@ -261,34 +265,6 @@ class semisuper_cycleGAN(object):
                                   norm=args.norm, use_dropout=not args.no_dropout, gpu_ids=args.gpu_ids)
         self.old_Di = define_Dis(input_nc=3, ndf=args.ndf, netD='pixel', n_layers_D=3,
                                  norm=args.norm, gpu_ids=args.gpu_ids)
-
-        ### To put the pretrained weights in Gis and Gsi
-        # if args.dataset != 'acdc':
-        #     saved_state_dict = torch.load(pretrained_loc)
-        #     new_params_Gsi = self.Gsi.state_dict().copy()
-        #     # new_params_Gis = self.Gis.state_dict().copy()
-        #     for name, param in new_params_Gsi.items():
-        #         # print(name)
-        #         if name in saved_state_dict and param.size() == saved_state_dict[name].size():
-        #             new_params_Gsi[name].copy_(saved_state_dict[name])
-        #             # print('copy {}'.format(name))
-        #     self.Gsi.load_state_dict(new_params_Gsi)
-        # for name, param in new_params_Gis.items():
-        #     # print(name)
-        #     if name in saved_state_dict and param.size() == saved_state_dict[name].size():
-        #         new_params_Gis[name].copy_(saved_state_dict[name])
-        #         # print('copy {}'.format(name))
-        # # self.Gis.load_state_dict(new_params_Gis)
-
-        ### This is just so as to get pretrained methods for the case of Gis
-        # nepotebno za ortopanograme, nisu potrebne modifikacije
-        if args.dataset == 'voc2012':
-            try:
-                ckpt_for_Arnab_loss = utils.load_checkpoint('./ckpt_for_Arnab_loss.ckpt')
-                self.old_Gis.load_state_dict(ckpt_for_Arnab_loss['Gis'])
-                self.old_Gsi.load_state_dict(ckpt_for_Arnab_loss['Gsi'])
-            except:
-                print('**There is an error in loading the ckpt_for_Arnab_loss**')
 
         utils.print_networks([self.Gsi], ['Gsi'])
 
