@@ -163,8 +163,9 @@ class supervised_model(object):
                 print("Epoch: (%3d) (%5d/%5d) | Crossentropy Loss:%.2e" %
                       (epoch, i + 1, len(labeled_loader), fullsupervisedloss.item()))
 
-                self.writer_supervised.add_scalars('Supervised Loss', {'CE Loss ': fullsupervisedloss},
+                self.writer_supervised.add_scalars('Supervised Loss', {'BCE Loss ': fullsupervisedloss},
                                                    len(labeled_loader) * epoch + i)
+
 
             ### For getting the IoU for the image
             self.Gsi.eval()
@@ -215,6 +216,8 @@ class supervised_model(object):
             self.writer_supervised.add_image('Ground truth for the image',
                                              torchvision.utils.make_grid(display_tensor_gt, nrow=2, normalize=True),
                                              epoch)
+            self.writer_supervised.add_scalars('Epoch mIOU', {'mIOU ': score["Mean IoU : \t"]},
+                                               epoch)
 
             if score["Mean IoU : \t"] >= self.best_iou:
                 print("Azuriram checkpoint sa novim vrijednostima!")
