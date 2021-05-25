@@ -196,8 +196,8 @@ class supervised_model(object):
                 fake = self.interp_val(fake)
             fake = self.activation_softmax(fake)
             fake_prediction = fake.data.max(1)[1].squeeze_(1).squeeze_(0).cpu().numpy()
-            val_gt = val_gt.data.max(1)[1].squeeze_(1).squeeze_(0).cpu()
-            #val_gt = val_gt.cpu()
+            #val_gt = val_gt.data.max(1)[1].squeeze_(1).squeeze_(0).cpu().numpy()
+            val_gt = val_gt.cpu()
 
             ### display_tensor is the final tensor that will be displayed on tensorboard
             display_tensor = torch.zeros([fake.shape[0], 3, fake.shape[2], fake.shape[3]])
