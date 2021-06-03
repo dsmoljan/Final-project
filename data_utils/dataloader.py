@@ -240,7 +240,7 @@ class OrtoDataset(Dataset):
                 list.append(gt)
                 for key in classes_dict.keys():
                     list.append(classes_dict[key])
-                gt = torch.stack(list)
+                gt = torch.stack(list, dim=1)
                 gt = torch.argmax(gt, dim=1)
             # ove 3 linije koristi ako hoce� provjeriti je li ucitava gt slike dobro, tj. spaja li ih dobro u jednu sliku
             new_img = gt.detach().squeeze().cpu().numpy()
