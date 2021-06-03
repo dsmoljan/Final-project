@@ -41,6 +41,7 @@ class OrtoDataset(Dataset):
                                 "22": 10, "23": 11, "24": 12, "25": 13, "26": 14, "27": 15, "28": 16,
                                 "31": 17, "32": 18, "33": 19, "34": 20, "35": 21, "36": 22, "37": 23, "38": 24,
                                 "41": 25, "42": 26, "43": 27, "44": 28, "45": 29, "46": 30, "47": 31, "48": 32}
+        self.teeth_intersect_map = {0:0,1:1,2:2,3:3,4:4,5:5,6:6,7:7,8:8,9:9,10:10,11:11,12:12,13:13,14:14,15:15,16:16,17:17,18:18,19:19,20:20,21:21,22:22,23:23,24:24,25:25,26:26,27:27,28:28,29:29,30:30,31:31,32:32}
         assert name in ('label', 'unlabel', 'val',
                         'test'), 'dataset name should be restricted in "label", "unlabel", "test" and "val", given %s' % name
         # assert 0 <= ratio <= 1, 'the ratio between "labeled" and "unlabeled" should be between 0 and 1, given %.1f' % ratio
@@ -179,9 +180,10 @@ class OrtoDataset(Dataset):
             gt = ora_image['root']['childs'][-1]['raster'].convert(
                 'L')  # ovo je da je spremi kao polycrhome, P znaci nesto drugo
             gt = self.transformation['gt'](gt)
-            gt[gt != 0] = 0  # sve vrijednosti koje nisu 0 (pozadina) mijenjamo sa 0
-            tensor_list = []
-            tensor_list.append(gt)
+            gt[gt != 0] = 1  # sve vrijednosti koje nisu 0 (pozadina) mijenjamo sa 1
+            classes_dict = dict()
+            for key in self.teeth_class_map.keys():
+                classes_dict[key] = gt.clone().detach()
             for i in range(len(ora_image['root']['childs'])):
                 name = ora_image['root']['childs'][i]['name']
                 # spajamo samo segmentacijske mape zubiju te pozadinu u jednu sliku/tensor -> one ili imaju duljinu imena 2 (npr. 17) ili imaju oblik poput 17 #1
@@ -205,12 +207,10 @@ class OrtoDataset(Dataset):
 
                         if (name in self.lower_teeth):
                             tmp_gt[tmp_gt != 0] = 1
-                            gt = gt | tmp_gt #možda ovo zbraja :)
                         elif (name in self.upper_teeth):
                             tmp_gt[tmp_gt != 0] = 2
-                            gt = gt | tmp_gt #možda ovo zbraja :)
 
-
+                        gt = gt | tmp_gt #možda ovo zbraja :)
 
                         #dap dap dap ovo (|) ti zbraja
                         #to nije problem kad si imao samo 0 i 1 ali sad je
@@ -225,21 +225,29 @@ class OrtoDataset(Dataset):
                 # pozadina, svaki zub je klasa za sebe
                 elif (self.ortopanograms_classes == 33):
                     if (len(name) == 2 or ((len(name)) == 5 and "#" in name)):
-                        # ako hoces vratiti na staro, otkomentiraj odavde
                         name = name[0:2]
-                        if (name in self.lower_teeth or name in self.upper_teeth):
+                        if (name in self.upper_teeth or name in self.lower_teeth):
                             tmp_gt = ora_image['root']['childs'][i]['raster'].convert('L')
                             tmp_gt = self.transformation['gt'](tmp_gt)
 
-                            tmp_gt[tmp_gt != 0] = self.teeth_class_map[name]
-                            gt = gt | tmp_gt     
-       
+                            tmp_gt[tmp_gt != 0] = 1
+                            classes_dict[name] = tmp_gt.clone().detach()
+                            #tmp_gt[tmp_gt != 0] = self.teeth_class_map[name]
+                            #gt = gt | tmp_gt
+
+            if (self.ortopanograms_classes == 33):
+                list = []
+                list.append(gt)
+                for key in classes_dict.keys():
+                    list.append(classes_dict[key])
+                gt = torch.stack(list)
+                gt = torch.argmax(gt, dim=1)
             # ove 3 linije koristi ako hoce� provjeriti je li ucitava gt slike dobro, tj. spaja li ih dobro u jednu sliku
             new_img = gt.detach().squeeze().cpu().numpy()
             new_img = utils.colorize_mask(new_img, "ortopanograms", self.ortopanograms_classes)
             new_img.save(os.path.join("original_gt/" + self.imgs[index] + '.png'))
             #print("Spremam sliku " + self.imgs[index] + ".png")
-	    
+
             # ovdje ti može baciti grešku, jer će gt u ovom trenutku već biti tenzor
             if self.augmentation is not None:
                 img, gt = self.augmentation(img, gt)
@@ -249,7 +257,7 @@ class OrtoDataset(Dataset):
                 # gt = self.transformation['gt'](gt) #mičemo ovu transformaciju jer smo je praktički gore več napravili
 
             # print("Vrijednosti slike sa RGB: " + str(np.unique(img.numpy())))
-            #print("Vrijednosti gt-a iz dataloadera: " + str(np.unique(gt.numpy())))
+            print("Vrijednosti gt-a iz dataloadera: " + str(np.unique(gt.numpy())))
             return img, gt, self.imgs[index]
 
     # returns an integer describing the full length of the dataset
