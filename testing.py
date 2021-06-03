@@ -27,7 +27,7 @@ def test(args):
     elif args.dataset == 'acdc':
         n_channels = 4
     elif args.dataset == 'ortopanograms':
-        n_channels = 2
+        n_channels = 3
     elif args.dataset == 'ortopanograms_test_output':
         n_channels = 2
 

@@ -487,6 +487,7 @@ class semisuper_cycleGAN(object):
                 # Adversarial losses
                 ###################################################
                 fake_img_dis = self.Di(fake_img)
+                #print("Fake img dis: " + str(fake_img_dis))
                 resnet_fake_img_dis = self.old_Di(recon_img)
 
                 ### For passing different type of input to Ds
@@ -494,10 +495,14 @@ class semisuper_cycleGAN(object):
                 fake_gt_discriminator = fake_gt_discriminator.unsqueeze(1)
                 fake_gt_discriminator = make_one_hot(fake_gt_discriminator, args.dataset, args.gpu_ids, args.ortopanograms_classes)
                 fake_gt_dis = self.Ds(fake_gt_discriminator.float())
+                #print("Fake gt dis: " + str(fake_gt_dis))
                 # lab_gt_dis = self.Ds(lab_gt)
 
-                real_label_gt = utils.cuda(Variable(torch.ones(fake_gt_dis.size())), args.gpu_ids)
-                real_label_img = utils.cuda(Variable(torch.ones(fake_img_dis.size())), args.gpu_ids)
+                real_label_gt = utils.cuda(Variable(torch.zeros(fake_gt_dis.size())), args.gpu_ids)
+                real_label_img = utils.cuda(Variable(torch.zeros(fake_img_dis.size())), args.gpu_ids)
+
+                #real_label_gt = utils.cuda(Variable(torch.ones(fake_gt_dis.size())), args.gpu_ids)
+                #real_label_img = utils.cuda(Variable(torch.ones(fake_img_dis.size())), args.gpu_ids)
 
                 # here is much better to have a cross entropy loss for classification.
                 img_gen_loss = self.MSE(fake_img_dis, real_label_img)
