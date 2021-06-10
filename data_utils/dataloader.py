@@ -15,17 +15,17 @@ import re
 import ora
 
 
-# dakle trenutno radim implementaciju u kojoj odmah slažem sve segmentacijske mape zubiju u jednu slikun sa cca 40 kanala
+# dakle trenutno radim implementaciju u kojoj odmah slaÅ¾em sve segmentacijske mape zubiju u jednu slikun sa cca 40 kanala
 # to radim po uzoru na ovo: https://towardsdatascience.com/semantic-hand-segmentation-using-pytorch-3e7a0a0386fa
 # slike nam moraju biti u one hot obliku prilikom ulaska u model
-# a sad, hoću li to ostvariti u dataloaderu ili negdje drugo je moja stvar
+# a sad, hoÄ‡u li to ostvariti u dataloaderu ili negdje drugo je moja stvar
 class OrtoDataset(Dataset):
     split_ratio = [0.85, 0.15]  # podjela na label/unlabel ili train/val?
 
-    # po novom, ratio označava omjer neoznačenih slika u odnosu na označene
-    # dakle ako je 1, jednak je broj označenih i neoznačenih slika
+    # po novom, ratio oznaÄava omjer neoznaÄenih slika u odnosu na oznaÄene
+    # dakle ako je 1, jednak je broj oznaÄenih i neoznaÄenih slika
     def __init__(self, ortopanograms_classes, root_path, name='label', ratio=1, transformation=None,
-                 augmentation=None):  # ratio je valjda koliko od training slika da uzme za "neoznačene"?
+                 augmentation=None):  # ratio je valjda koliko od training slika da uzme za "neoznaÄene"?
         super(OrtoDataset, self).__init__()
         self.root_path = root_path  # dakle root, trenutni direktorij, podaci se nalaze u ../data mislim
         self.ratio = ratio
@@ -55,7 +55,7 @@ class OrtoDataset(Dataset):
             unlabeled_list = pd.read_table(os.path.join(self.root_path, 'imagelists', 'unlabeled.txt')).values.reshape(
                 -1)
 
-            # ovaj dio koda će možda trebati malo izmijeniti jednom kada ćemo imati neoznačene slike
+            # ovaj dio koda Ä‡e moÅ¾da trebati malo izmijeniti jednom kada Ä‡emo imati neoznaÄene slike
             labeled_imgs = np.random.choice(train_imgs, size=int(train_imgs.__len__()), replace=False)
             labeled_imgs = list(labeled_imgs)
 
@@ -64,11 +64,11 @@ class OrtoDataset(Dataset):
 
             current_ratio = len(unlabeled_imgs) / len(labeled_imgs)
 
-            # čini se da ovdje jednostavno uzmemo sve slike koje su nam dostupne, te neke stavimo da su nam labeled, neke ne
-            # moguće da jednom kad ćeš actually imati dodatne neoznačene slike ćeš ovdje morati promijeniti kod
+            # Äini se da ovdje jednostavno uzmemo sve slike koje su nam dostupne, te neke stavimo da su nam labeled, neke ne
+            # moguÄ‡e da jednom kad Ä‡eÅ¡ actually imati dodatne neoznaÄene slike Ä‡eÅ¡ ovdje morati promijeniti kod
             ### Now here we equalize the lengths of labelled and unlabelled imgs by just repeating up some images
             if self.ratio > 1:
-                # ako je omjer veći od 1, to znači da ima više neoznačenih slika nego označenih, te treba dodati još označenih slika
+                # ako je omjer veÄ‡i od 1, to znaÄi da ima viÅ¡e neoznaÄenih slika nego oznaÄenih, te treba dodati joÅ¡ oznaÄenih slika
 
                 new_imgs = np.random.choice(train_imgs, size=int(len(unlabeled_imgs) - len(labeled_imgs)),
                                             replace=False)
@@ -115,11 +115,11 @@ class OrtoDataset(Dataset):
 
     # This method loads a single (input, label) pair from the disk and performs whichever preprocessing the data requires. Pod label se valjda misli na ground truth?
     def __getitem__(self, index):
-        #ovo je neka buduća ideja, ukoliko bi se kod ikad želio pustiti u "produkciju", onda
-        #bi samo primao neoznačene slike, bez ground trutha, bez ičega
+        #ovo je neka buduÄ‡a ideja, ukoliko bi se kod ikad Å¾elio pustiti u "produkciju", onda
+        #bi samo primao neoznaÄene slike, bez ground trutha, bez iÄega
         if self.name == 'production':
             img_path = os.path.join(self.root_path, 'production', self.imgs[
-                index] + '.png')  # pošto se radi o test datasetu, učitavamo samo .jpg, odnosno sliku, bez njene segmentacijske maske
+                index] + '.png')  # poÅ¡to se radi o test datasetu, uÄitavamo samo .jpg, odnosno sliku, bez njene segmentacijske maske
 
             img = Image.open(img_path)  # .convert('RGB')
 
@@ -151,19 +151,19 @@ class OrtoDataset(Dataset):
             # print("Vrijednosti slike sa RGB: " + np.unique(img.numpy()))
             return img, self.imgs[index]
         #dakle, ako se radi o training, validation ili testing
-        #validation i testing su praktičiki identičan kod, samo što su različiti skupovi podataka
-        #validation se koristi tijekom treniranja za donošenje odluke o updatanju modela
-        #dok se training koristi nakon završetka treniranja modela, za procjenu uspješnosti modela
+        #validation i testing su praktiÄiki identiÄan kod, samo Å¡to su razliÄiti skupovi podataka
+        #validation se koristi tijekom treniranja za donoÅ¡enje odluke o updatanju modela
+        #dok se training koristi nakon zavrÅ¡etka treniranja modela, za procjenu uspjeÅ¡nosti modela
         else:
             ora_path = os.path.join(self.root_path, 'training',
-                                    # u mapi /training nalaze se i training i validation slike, uzimaju se prema onom što piše u traing.txt, odnosno validation.txt
+                                    # u mapi /training nalaze se i training i validation slike, uzimaju se prema onom Å¡to piÅ¡e u traing.txt, odnosno validation.txt
                                     self.imgs[index] + '.ora')  # jedno je valjda slika
 
             ora_image = ora.read_ora(ora_path)
-            # učitavamo ortopanogram
+            # uÄitavamo ortopanogram
             img = (ora_image['root']['childs'][0]['raster']).convert('RGB')
-            # ova petlja je za svaki slučaj, ukoliko iz nekog razloga ora plugin sliku 000.png ne učita prvu
-            # ako se ispostavi da uvijek 000.png čita prvu, možeš maknuti ovu petlju
+            # ova petlja je za svaki sluÄaj, ukoliko iz nekog razloga ora plugin sliku 000.png ne uÄita prvu
+            # ako se ispostavi da uvijek 000.png Äita prvu, moÅ¾eÅ¡ maknuti ovu petlju
             for i in range(len(ora_image['root']['childs'])):
                 if (ora_image['root']['childs'][i]['src'] == 'data/000.png'):
                     img = (ora_image['root']['childs'][i]['raster']).convert('RGB')
@@ -171,12 +171,12 @@ class OrtoDataset(Dataset):
 
             # img = Image.open(img_path).convert('RGB')
 
-            # učitavanje ground trutha
+            # uÄitavanje ground trutha
             # Ex je oznaka za prazan zub
-            # zadnja slika je uvijek pozadina, i nju treba učitati
-            # dakle sad treba učitati samo slike koje ili nemaju slova u sebi, ili imaju samo Ex
+            # zadnja slika je uvijek pozadina, i nju treba uÄitati
+            # dakle sad treba uÄitati samo slike koje ili nemaju slova u sebi, ili imaju samo Ex
 
-            # potencijalna greška ukoliko background nije uvijek zadnji
+            # potencijalna greÅ¡ka ukoliko background nije uvijek zadnji
             gt = ora_image['root']['childs'][-1]['raster'].convert(
                 'L')  # ovo je da je spremi kao polycrhome, P znaci nesto drugo
             gt = self.transformation['gt'](gt)
@@ -195,9 +195,9 @@ class OrtoDataset(Dataset):
                         tmp_gt[tmp_gt != 0] = 1
 
                         gt = gt | tmp_gt
-                        # koristi or operaciju nad tenzorima da ih spojiš u jedan, ioanko su svi samo 0 ili jedan
+                        # koristi or operaciju nad tenzorima da ih spojiÅ¡ u jedan, ioanko su svi samo 0 ili jedan
                         # https://discuss.pytorch.org/t/combine-2-channels-of-an-image/75628/3
-                        # kasnije kad ćeš imati više slika koristiti ćeš funkciju Relabel
+                        # kasnije kad Ä‡eÅ¡ imati viÅ¡e slika koristiti Ä‡eÅ¡ funkciju Relabel
                 # pozadina, gornji zubi, donji zubi
                 elif (self.ortopanograms_classes == 3):
                     if (len(name) == 2 or ((len(name)) == 5 and "#" in name)):
@@ -210,17 +210,17 @@ class OrtoDataset(Dataset):
                         elif (name in self.upper_teeth):
                             tmp_gt[tmp_gt != 0] = 2
 
-                        gt = gt | tmp_gt #možda ovo zbraja :)
+                        gt = gt | tmp_gt #moÅ¾da ovo zbraja :)
 
                         #dap dap dap ovo (|) ti zbraja
                         #to nije problem kad si imao samo 0 i 1 ali sad je
-                        #i kad imaš preklapanje između piksela koji čine klasu 1 i 2
+                        #i kad imaÅ¡ preklapanje izmeÄ‘u piksela koji Äine klasu 1 i 2
                         #on ti ih zbroji
-                        #ok dogovor - ovo napiši u radu!
-                        #kad imaš preklapanje, pridjeljuješ to gornjim zubima, dakle 2
+                        #ok dogovor - ovo napiÅ¡i u radu!
+                        #kad imaÅ¡ preklapanje, pridjeljujeÅ¡ to gornjim zubima, dakle 2
                         #print("Vrijednosti gt-a iz dijela za 3 klase: " + str(np.unique(gt.numpy())))
                         # na kraju imamo jednokanalni tenzor, u kojem imamo nule na mjestima gdje su pikseli pozadine, 1 gdje su pikseli donjih zuba, te 2 gdje su pikseli gornjih zuba
-                        # a mislim da će make_one_hot to pretvoriti u 3 kanalni tenzor
+                        # a mislim da Ä‡e make_one_hot to pretvoriti u 3 kanalni tenzor
                         gt[gt == 3] = 2
                 # pozadina, svaki zub je klasa za sebe
                 elif (self.ortopanograms_classes == 33):
@@ -242,19 +242,20 @@ class OrtoDataset(Dataset):
                     list.append(classes_dict[key])
                 gt = torch.stack(list, dim=1)
                 gt = torch.argmax(gt, dim=1)
-            # ove 3 linije koristi ako hoce� provjeriti je li ucitava gt slike dobro, tj. spaja li ih dobro u jednu sliku
+                gt[gt == 32] = 0
+            # ove 3 linije koristi ako hoceï¿½ provjeriti je li ucitava gt slike dobro, tj. spaja li ih dobro u jednu sliku
             new_img = gt.detach().squeeze().cpu().numpy()
             new_img = utils.colorize_mask(new_img, "ortopanograms", self.ortopanograms_classes)
             new_img.save(os.path.join("original_gt/" + self.imgs[index] + '.png'))
             #print("Spremam sliku " + self.imgs[index] + ".png")
 
-            # ovdje ti može baciti grešku, jer će gt u ovom trenutku već biti tenzor
+            # ovdje ti moÅ¾e baciti greÅ¡ku, jer Ä‡e gt u ovom trenutku veÄ‡ biti tenzor
             if self.augmentation is not None:
                 img, gt = self.augmentation(img, gt)
 
             if self.transformation:
                 img = self.transformation['img'](img)
-                # gt = self.transformation['gt'](gt) #mičemo ovu transformaciju jer smo je praktički gore več napravili
+                # gt = self.transformation['gt'](gt) #miÄemo ovu transformaciju jer smo je praktiÄki gore veÄ napravili
 
             # print("Vrijednosti slike sa RGB: " + str(np.unique(img.numpy())))
             print("Vrijednosti gt-a iz dataloadera: " + str(np.unique(gt.numpy())))
@@ -269,9 +270,9 @@ class OrtoDataset(Dataset):
         #
         # unlabeled_imgs = [x for x in train_imgs if x not in labeled_imgs]
 
-        # pošto se čini da punih označenih slika imaš dosta malo, možda će ti ovako nešto trebati?
-        # podijela na označene i neoznačene
-        # također, neku podijelu na test/train/validation imaš u metadata tablicama
+        # poÅ¡to se Äini da punih oznaÄenih slika imaÅ¡ dosta malo, moÅ¾da Ä‡e ti ovako neÅ¡to trebati?
+        # podijela na oznaÄene i neoznaÄene
+        # takoÄ‘er, neku podijelu na test/train/validation imaÅ¡ u metadata tablicama
 
 
 class VOCDataset(Dataset):
@@ -310,12 +311,12 @@ class VOCDataset(Dataset):
             val_imgs = pd.read_table(os.path.join(self.root_path, 'ImageSets/Segmentation', 'val.txt')).values.reshape(
                 -1)
 
-            # trebati će možda napraviti ovako neku podlijedu na train/val?
+            # trebati Ä‡e moÅ¾da napraviti ovako neku podlijedu na train/val?
 
-            # lol primijeti ovdje, ovdje on prvo učita skup svih slika za treniranje
-            # a onda iz njih uzima da su mu neke slike označene neke ne
-            # dakle trenutno kod i je napravljen za situaciju kad su ti sve slike označene, a ako kasnije budeš htio ubaciti neke prave neoznačene slike,
-            # to ćeš morati sam dodati
+            # lol primijeti ovdje, ovdje on prvo uÄita skup svih slika za treniranje
+            # a onda iz njih uzima da su mu neke slike oznaÄene neke ne
+            # dakle trenutno kod i je napravljen za situaciju kad su ti sve slike oznaÄene, a ako kasnije budeÅ¡ htio ubaciti neke prave neoznaÄene slike,
+            # to Ä‡eÅ¡ morati sam dodati
             labeled_imgs = np.random.choice(train_imgs, size=int(self.ratio * train_imgs.__len__()), replace=False)
             labeled_imgs = list(labeled_imgs)
 
@@ -359,7 +360,7 @@ class VOCDataset(Dataset):
     def __getitem__(self, index):
         if self.name == 'test':
             img_path = os.path.join(self.root_path, 'JPEGImages', self.imgs[
-                index] + '.jpg')  # pošto se radi o test datasetu, učitavamo samo .jpg, odnosno sliku, bez njene segmentacijske maske
+                index] + '.jpg')  # poÅ¡to se radi o test datasetu, uÄitavamo samo .jpg, odnosno sliku, bez njene segmentacijske maske
 
             img = Image.open(img_path).convert('RGB')
 
@@ -374,8 +375,8 @@ class VOCDataset(Dataset):
         else:
             img_path = os.path.join(self.root_path, 'JPEGImages', self.imgs[index] + '.jpg')  # jedno je valjda slika
             gt_path = os.path.join(self.root_path, 'SegmentationClassAug',
-                                   self.gts[index] + '.png')  # drugo je ručno označena maska
-            # ja mislim da bi ja ovdje onda učitao svaih 30 i nešto slojeva i spojio ih u jednu sliku
+                                   self.gts[index] + '.png')  # drugo je ruÄno oznaÄena maska
+            # ja mislim da bi ja ovdje onda uÄitao svaih 30 i neÅ¡to slojeva i spojio ih u jednu sliku
 
             img = Image.open(img_path).convert('RGB')
             gt = Image.open(gt_path)  # .convert('P')
@@ -552,7 +553,7 @@ class CityscapesDataset(Dataset):
             return img, lbl, re.sub(r'.*/', '', img_path[38:]).rstrip(
                 '.png')  ### These numbers have been hard coded so as to get a suitable name for the model
 
-    def encode_segmap(self, mask):  # moguće da se ovdje segmentacijske karte spajaju u jednu veliku sliku?
+    def encode_segmap(self, mask):  # moguÄ‡e da se ovdje segmentacijske karte spajaju u jednu veliku sliku?
         # Put all void classes to ignore index
         for _voidc in self.void_classes:
             mask[mask == _voidc] = self.ignore_index
@@ -562,7 +563,7 @@ class CityscapesDataset(Dataset):
         return mask
 
 
-class ACDCDataset(Dataset):  # ovaj ti je možda još i najsličniji tvom
+class ACDCDataset(Dataset):  # ovaj ti je moÅ¾da joÅ¡ i najsliÄniji tvom
     '''
     The dataloader for ACDC dataset
     '''

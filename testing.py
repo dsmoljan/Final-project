@@ -27,7 +27,7 @@ def test(args):
     elif args.dataset == 'acdc':
         n_channels = 4
     elif args.dataset == 'ortopanograms':
-        n_channels = 3
+        n_channels = args.ortopanograms_classes
     elif args.dataset == 'ortopanograms_test_output':
         n_channels = 2
 
@@ -137,7 +137,7 @@ def test(args):
             test_gt = test_gt.squeeze().data.cpu().numpy()
             running_metrics_test.update(test_gt, prediction)
             #ovdje samo iteriramo po batchevima, to je shape[0]
-            #ukoliko ćeš htjeti za više klasa, morati ćeš prepraviti kod
+            #ukoliko Ä‡eÅ¡ htjeti za viÅ¡e klasa, morati Ä‡eÅ¡ prepraviti kod
             for j in range(prediction.shape[0]):
                 new_img = prediction[j]  ### Taking a particular image from the batch
 
