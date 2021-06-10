@@ -248,22 +248,63 @@ class semisuper_cycleGAN(object):
         # for image to segmentation
         self.Gsi = define_Gen(input_nc=3, output_nc=self.n_channels, ngf=args.ngf, netG='deeplab',
                               norm=args.norm, use_dropout=not args.no_dropout, gpu_ids=args.gpu_ids)
+        # prvi diskriminator - unalebeld (original) images vs generated images
         self.Di = define_Dis(input_nc=3, ndf=args.ndf, netD='pixel', n_layers_D=3,
                              norm=args.norm, gpu_ids=args.gpu_ids)
-        self.Ds = define_Dis(input_nc=1, ndf=args.ndf, netD='pixel', n_layers_D=3,
+        # drugi diskriminator - ground truth labels vs generated labels
+        self.Ds = define_Dis(input_nc=self.n_channels, ndf=args.ndf, netD='pixel', n_layers_D=3,
                              norm=args.norm, gpu_ids=args.gpu_ids)  # for voc 2012, there are 21 classes
+
+        self.old_Gis = define_Gen(input_nc=self.n_channels, output_nc=3, ngf=args.ngf, netG='resnet_9blocks',
+                                  norm=args.norm, use_dropout=not args.no_dropout, gpu_ids=args.gpu_ids)
+        self.old_Gsi = define_Gen(input_nc=3, output_nc=self.n_channels, ngf=args.ngf, netG='resnet_9blocks_softmax',
+                                  norm=args.norm, use_dropout=not args.no_dropout, gpu_ids=args.gpu_ids)
+        self.old_Di = define_Dis(input_nc=3, ndf=args.ndf, netD='pixel', n_layers_D=3,
+                                 norm=args.norm, gpu_ids=args.gpu_ids)
+
+        ### To put the pretrained weights in Gis and Gsi
+        # if args.dataset != 'acdc':
+        #     saved_state_dict = torch.load(pretrained_loc)
+        #     new_params_Gsi = self.Gsi.state_dict().copy()
+        #     # new_params_Gis = self.Gis.state_dict().copy()
+        #     for name, param in new_params_Gsi.items():
+        #         # print(name)
+        #         if name in saved_state_dict and param.size() == saved_state_dict[name].size():
+        #             new_params_Gsi[name].copy_(saved_state_dict[name])
+        #             # print('copy {}'.format(name))
+        #     self.Gsi.load_state_dict(new_params_Gsi)
+        # for name, param in new_params_Gis.items():
+        #     # print(name)
+        #     if name in saved_state_dict and param.size() == saved_state_dict[name].size():
+        #         new_params_Gis[name].copy_(saved_state_dict[name])
+        #         # print('copy {}'.format(name))
+        # # self.Gis.load_state_dict(new_params_Gis)
+
+        ### This is just so as to get pretrained methods for the case of Gis
+        # nepotebno za ortopanograme, nisu potrebne modifikacije
+        if args.dataset == 'voc2012':
+            try:
+                ckpt_for_Arnab_loss = utils.load_checkpoint('./ckpt_for_Arnab_loss.ckpt')
+                self.old_Gis.load_state_dict(ckpt_for_Arnab_loss['Gis'])
+                self.old_Gsi.load_state_dict(ckpt_for_Arnab_loss['Gsi'])
+            except:
+                print('**There is an error in loading the ckpt_for_Arnab_loss**')
+
+        utils.print_networks([self.Gsi], ['Gsi'])
 
         utils.print_networks([self.Gis, self.Gsi, self.Di, self.Ds], ['Gis', 'Gsi', 'Di', 'Ds'])
 
         self.args = args
 
+        ### interpolation
         self.interp = nn.Upsample((args.crop_height, args.crop_width), mode='bilinear', align_corners=True)
-
 
         self.MSE = nn.MSELoss()
         self.L1 = nn.L1Loss()
         self.CE = nn.CrossEntropyLoss()
         self.activation_softmax = nn.Softmax2d()
+        self.activation_tanh = nn.Tanh()
+        self.activation_sigmoid = nn.Sigmoid()
 
         ### Tensorboard writer
         self.writer_semisuper = SummaryWriter(tensorboard_loc + '_semisuper')
@@ -307,13 +348,14 @@ class semisuper_cycleGAN(object):
             self.best_iou = -100
 
     def train(self, args):
-        transform = get_transformation((args.crop_height, args.crop_width), resize=True, dataset=args.dataset)
+        transform = get_transformation((args.crop_height, args.crop_width), resize=True,
+                                       dataset=args.dataset)  # tu se postavlja tražena transformacija (npr. 200x200)
 
         # let the choice of dataset configurable
         if self.args.dataset == 'voc2012':
-            labeled_set = VOCDataset(root_path=root, name='label', ratio=0.5, transformation=transform,
+            labeled_set = VOCDataset(root_path=root, name='label', ratio=0.1, transformation=transform,
                                      augmentation=None)
-            unlabeled_set = VOCDataset(root_path=root, name='unlabel', ratio=0.5, transformation=transform,
+            unlabeled_set = VOCDataset(root_path=root, name='unlabel', ratio=0.1, transformation=transform,
                                        augmentation=None)
             val_set = VOCDataset(root_path=root, name='val', ratio=0.5, transformation=transform,
                                  augmentation=None)
@@ -351,10 +393,15 @@ class semisuper_cycleGAN(object):
         ^^ The reason for using drop_last=True so as to obtain an even size of all the batches and
         deleting the last batch with less images
         '''
+        # loader za parove označena slika - ground truth
         labeled_loader = DataLoader(labeled_set, batch_size=args.batch_size, shuffle=True, drop_last=True)
+        # loader neoznačenih slika, bez ground trutha
         unlabeled_loader = DataLoader(unlabeled_set, batch_size=args.batch_size, shuffle=True, drop_last=True)
+        # loader slika koje se koriste za validaciju - dakle par slika i ground truth
         val_loader = DataLoader(val_set, batch_size=args.batch_size, shuffle=True, drop_last=True)
 
+        # ovo su objekti klase Sample_from_Pool
+        new_img_fake_sample = utils.Sample_from_Pool()
         img_fake_sample = utils.Sample_from_Pool()
         gt_fake_sample = utils.Sample_from_Pool()
 
@@ -367,25 +414,33 @@ class semisuper_cycleGAN(object):
             lr = self.g_optimizer.param_groups[0]['lr']
             print('learning rate = %.7f' % lr)
 
+            # ovo valjda samo postavlja generatore u train način rada?
             self.Gsi.train()
             self.Gis.train()
 
-            for i, ((l_img, l_gt, _), (unl_img, _, _)) in enumerate(zip(labeled_loader, unlabeled_loader)):
+            # if (epoch+1)%10 == 0:
+            # args.lamda_img = args.lamda_img + 0.08
+            # args.lamda_gt = args.lamda_gt + 0.04
+
+            # u svakom koraku petlje uzima jedan (ili više) par ortopanograma+ground truth te jednu neoznačenu sliku
+            for i, ((l_img, l_gt, _), (unl_img, _)) in enumerate(zip(labeled_loader, unlabeled_loader)):
                 # step
                 step = epoch * min(len(labeled_loader), len(unlabeled_loader)) + i + 1
 
+                # dataloader mu već isporuči tenzor, ovdje samo te podatke prebacuje na GPU
                 l_img, unl_img, l_gt = utils.cuda([l_img, unl_img, l_gt], args.gpu_ids)
 
                 # Generator Computations
                 ##################################################
 
-                set_grad([self.Di, self.Ds], False)
+                set_grad([self.Di, self.Ds, self.old_Di], False)
+                set_grad([self.old_Gsi, self.old_Gis], False)
                 self.g_optimizer.zero_grad()
 
                 # Forward pass through generators
                 ##################################################
-                fake_img = self.Gis(make_one_hot(l_gt, args.dataset, args.gpu_ids).float())
-                fake_gt = self.Gsi(unl_img.float())  ### having 21 channels
+                fake_img = self.Gis(make_one_hot(l_gt, args.dataset,args.gpu_ids, args.ortopanograms_classes).float())  # mislim da ovdje make_one_hot iz osnovne slike radi novi vektor sa odgovarajućim dimemnzijama, znači u svojem kodu ćeš to morati maknuti
+                fake_gt = self.Gsi(unl_img.float())  ### having 21 channels                #tako da, ako bi ti odmah u svojem modelu stvorio vektor sa 40 ili koliko kanala, onda samo makneš make_one_hot i u ovu funkciju pošalješ taj svoj tenzor
                 lab_gt = self.Gsi(l_img)  ### having 21 channels
 
                 ### Getting the outputs of the model to correct dimensions
@@ -397,11 +452,16 @@ class semisuper_cycleGAN(object):
                 # fake_gt = fake_gt.unsqueeze(1)   ### will get into 1 channel only
                 # fake_gt = make_one_hot(fake_gt, args.dataset, args.gpu_ids)
 
-                lab_loss_CE = self.CE(lab_gt, l_gt.squeeze(1))
+                lab_loss_CE = self.CE(lab_gt,
+                                      l_gt.squeeze(1))  # squeeze vraća tenzor sa svim inputima veličine 1 maknutima
 
-                ### Again applying activations in the label
+                ### Again applying activations
                 lab_gt = self.activation_softmax(lab_gt)
                 fake_gt = self.activation_softmax(fake_gt)
+                # fake_gt = fake_gt.data.max(1)[1].squeeze_(1).squeeze_(0)
+                # fake_gt = fake_gt.unsqueeze(1)
+                # fake_gt = make_one_hot(fake_gt, args.dataset, args.gpu_ids)
+                # fake_img = self.activation_tanh(fake_img)
 
                 recon_img = self.Gis(fake_gt.float())
                 recon_lab_img = self.Gis(lab_gt.float())
@@ -412,28 +472,48 @@ class semisuper_cycleGAN(object):
                 recon_lab_img = self.interp(recon_lab_img)
                 recon_gt = self.interp(recon_gt)
 
+                ### This is for the case of the new loss between the recon_img from resnet and deeplab network
+                resnet_fake_gt = self.old_Gsi(unl_img.float())
+                resnet_lab_gt = self.old_Gsi(l_img)
+                resnet_lab_gt = self.activation_softmax(resnet_lab_gt)
+                resnet_fake_gt = self.activation_softmax(resnet_fake_gt)
+                resnet_recon_img = self.old_Gis(resnet_fake_gt.float())
+                resnet_recon_lab_img = self.old_Gis(resnet_lab_gt.float())
+
+                ## Applying the tanh activations
+                # recon_img = self.activation_tanh(recon_img)
+                # recon_lab_img = self.activation_tanh(recon_lab_img)
+
                 # Adversarial losses
                 ###################################################
                 fake_img_dis = self.Di(fake_img)
+                #print("Fake img dis: " + str(fake_img_dis))
+                resnet_fake_img_dis = self.old_Di(recon_img)
 
                 ### For passing different type of input to Ds
                 fake_gt_discriminator = fake_gt.data.max(1)[1].squeeze_(1).squeeze_(0)
                 fake_gt_discriminator = fake_gt_discriminator.unsqueeze(1)
-                fake_gt_discriminator = make_one_hot(fake_gt_discriminator, args.dataset, args.gpu_ids)
+                fake_gt_discriminator = make_one_hot(fake_gt_discriminator, args.dataset, args.gpu_ids, args.ortopanograms_classes)
                 fake_gt_dis = self.Ds(fake_gt_discriminator.float())
+                #print("Fake gt dis: " + str(fake_gt_dis))
                 # lab_gt_dis = self.Ds(lab_gt)
 
-                #treba li ovdje ići torch.zeros?
-                real_label = utils.cuda(Variable(torch.ones(fake_gt_dis.size())), args.gpu_ids)
+                real_label_gt = utils.cuda(Variable(torch.zeros(fake_gt_dis.size())), args.gpu_ids)
+                real_label_img = utils.cuda(Variable(torch.zeros(fake_img_dis.size())), args.gpu_ids)
+
+                #real_label_gt = utils.cuda(Variable(torch.ones(fake_gt_dis.size())), args.gpu_ids)
+                #real_label_img = utils.cuda(Variable(torch.ones(fake_img_dis.size())), args.gpu_ids)
 
                 # here is much better to have a cross entropy loss for classification.
-                img_gen_loss = self.MSE(fake_img_dis, real_label)
-                gt_gen_loss = self.MSE(fake_gt_dis, real_label)
+                img_gen_loss = self.MSE(fake_img_dis, real_label_img)
+                gt_gen_loss = self.MSE(fake_gt_dis, real_label_gt)
                 # gt_label_gen_loss = self.MSE(lab_gt_dis, real_label)
 
                 # Cycle consistency losses
                 ###################################################
                 img_cycle_loss = self.L1(recon_img, unl_img)
+                # img_cycle_loss = self.L1(recon_img, unl_img)
+                # img_cycle_loss_perceptual = perceptual_loss(recon_img, unl_img, args.gpu_ids)
                 gt_cycle_loss = self.CE(recon_gt, l_gt.squeeze(1))
                 # lab_img_cycle_loss = self.L1(recon_lab_img, l_img) * args.lamda
 
@@ -441,13 +521,14 @@ class semisuper_cycleGAN(object):
                 ###################################################
                 # lab_loss_CE = self.CE(lab_gt, l_gt.squeeze(1))
                 lab_loss_MSE = self.MSE(fake_img, l_img)
+                # lab_loss_perceptual = perceptual_loss(fake_img, l_img, args.gpu_ids)
 
                 fullsupervisedloss = args.lab_CE_weight * lab_loss_CE + args.lab_MSE_weight * lab_loss_MSE
 
                 unsupervisedloss = args.adversarial_weight * (
-                            img_gen_loss + gt_gen_loss) + img_cycle_loss * args.lamda_img + gt_cycle_loss * args.lamda_gt
+                            img_gen_loss + gt_gen_loss) + img_cycle_loss + gt_cycle_loss * args.lamda_gt
 
-                gen_loss = args.gen_weight * (fullsupervisedloss) + unsupervisedloss
+                gen_loss = fullsupervisedloss + unsupervisedloss
 
                 # Update generators
                 ###################################################
@@ -459,7 +540,7 @@ class semisuper_cycleGAN(object):
                     # Discriminator Computations
                     #################################################
 
-                    set_grad([self.Di, self.Ds], True)
+                    set_grad([self.Di, self.Ds, self.old_Di], True)
                     self.d_optimizer.zero_grad()
 
                     # Sample from history of generated images
@@ -468,41 +549,51 @@ class semisuper_cycleGAN(object):
                         fake_img = self.gauss_noise(fake_img.cpu())
                         fake_gt = self.gauss_noise(fake_gt.cpu())
 
+                    recon_img = Variable(torch.Tensor(new_img_fake_sample([recon_img.cpu().data.numpy()])[0]))
                     fake_img = Variable(torch.Tensor(img_fake_sample([fake_img.cpu().data.numpy()])[0]))
                     # lab_gt = Variable(torch.Tensor(gt_fake_sample([lab_gt.cpu().data.numpy()])[0]))
                     fake_gt = Variable(torch.Tensor(gt_fake_sample([fake_gt.cpu().data.numpy()])[0]))
 
-                    fake_img, lab_gt, fake_gt = utils.cuda([fake_img, lab_gt, fake_gt], args.gpu_ids)
+                    recon_img, fake_img, fake_gt = utils.cuda([recon_img, fake_img, fake_gt], args.gpu_ids)
 
                     # Forward pass through discriminators
                     #################################################
                     unl_img_dis = self.Di(unl_img)
                     fake_img_dis = self.Di(fake_img)
+                    resnet_recon_img_dis = self.old_Di(resnet_recon_img)
+                    resnet_fake_img_dis = self.old_Di(recon_img)
 
                     # lab_gt_dis = self.Ds(lab_gt)
 
+                    l_gt = make_one_hot(l_gt, args.dataset, args.gpu_ids, args.ortopanograms_classes)
                     real_gt_dis = self.Ds(l_gt.float())
 
                     fake_gt_discriminator = fake_gt.data.max(1)[1].squeeze_(1).squeeze_(0)
                     fake_gt_discriminator = fake_gt_discriminator.unsqueeze(1)
-                    # fake_gt_discriminator = make_one_hot(fake_gt_discriminator, args.dataset, args.gpu_ids)
+                    fake_gt_discriminator = make_one_hot(fake_gt_discriminator, args.dataset, args.gpu_ids, args.ortopanograms_classes)
                     fake_gt_dis = self.Ds(fake_gt_discriminator.float())
 
-                    real_label = utils.cuda(Variable(torch.ones(unl_img_dis.size())), args.gpu_ids)
-                    fake_label = utils.cuda(Variable(torch.zeros(fake_img_dis.size())), args.gpu_ids)
+                    real_label_img = utils.cuda(Variable(torch.ones(unl_img_dis.size())), args.gpu_ids)
+                    fake_label_img = utils.cuda(Variable(torch.zeros(fake_img_dis.size())), args.gpu_ids)
+                    real_label_gt = utils.cuda(Variable(torch.ones(real_gt_dis.size())), args.gpu_ids)
+                    fake_label_gt = utils.cuda(Variable(torch.zeros(fake_gt_dis.size())), args.gpu_ids)
 
                     # Discriminator losses
                     ##################################################
-                    img_dis_real_loss = self.MSE(unl_img_dis, real_label)
-                    img_dis_fake_loss = self.MSE(fake_img_dis, fake_label)
-                    gt_dis_real_loss = self.MSE(real_gt_dis, real_label)
-                    gt_dis_fake_loss = self.MSE(fake_gt_dis, fake_label)
+                    img_dis_real_loss = self.MSE(unl_img_dis, real_label_img)
+                    img_dis_fake_loss = self.MSE(fake_img_dis, fake_label_img)
+                    gt_dis_real_loss = self.MSE(real_gt_dis, real_label_gt)
+                    gt_dis_fake_loss = self.MSE(fake_gt_dis, fake_label_gt)
                     # lab_gt_dis_fake_loss = self.MSE(lab_gt_dis, fake_label)
+
+                    cycle_img_dis_real_loss = self.MSE(resnet_recon_img_dis, real_label_img)
+                    cycle_img_dis_fake_loss = self.MSE(resnet_fake_img_dis, fake_label_img)
 
                     # Total discriminators losses
                     img_dis_loss = (img_dis_real_loss + img_dis_fake_loss) * 0.5
                     gt_dis_loss = (gt_dis_real_loss + gt_dis_fake_loss) * 0.5
                     # lab_gt_dis_loss = (gt_dis_real_loss + lab_gt_dis_fake_loss)*0.33
+                    cycle_img_dis_loss = cycle_img_dis_real_loss + cycle_img_dis_fake_loss
 
                     # Update discriminators
                     ##################################################
@@ -516,22 +607,24 @@ class semisuper_cycleGAN(object):
                       (epoch, i + 1, min(len(labeled_loader), len(unlabeled_loader)),
                        img_dis_loss + gt_dis_loss, unsupervisedloss, fullsupervisedloss))
 
-                self.writer_semisuper.add_scalars('Dis Loss',
-                                                  {'img_dis_loss': img_dis_loss, 'gt_dis_loss': gt_dis_loss},
+                # ovdje mislim samo zapisuje lossove za epohu
+                self.writer_semisuper.add_scalars('Dis Loss', {'img_dis_loss': img_dis_loss, 'gt_dis_loss': gt_dis_loss,
+                                                               'cycle_img_dis_loss': cycle_img_dis_loss},
                                                   len(labeled_loader) * epoch + i)
                 self.writer_semisuper.add_scalars('Unlabelled Loss',
                                                   {'img_gen_loss': img_gen_loss, 'gt_gen_loss': gt_gen_loss,
-                                                   'img_cycle_loss': img_cycle_loss, 'gt_cycle_loss': gt_cycle_loss},
-                                                  len(labeled_loader) * epoch + i)
+                                                   'img_cycle_loss': resnet_img_cycle_loss,
+                                                   'gt_cycle_loss': gt_cycle_loss}, len(labeled_loader) * epoch + i)
                 self.writer_semisuper.add_scalars('Labelled Loss',
                                                   {'lab_loss_CE': lab_loss_CE, 'lab_loss_MSE': lab_loss_MSE},
                                                   len(labeled_loader) * epoch + i)
 
                 counter += 1
 
-            ### For getting the mean IoU
-            self.Gsi.eval()
+            ### For getting the mean IoU -> validacija
+            self.Gsi.eval()  # postavljamo generatore u evaluationm način rada
             self.Gis.eval()
+            # promjene nisu potrebne - slike se preko dataloadera vrate u korektnom obliku, te se samo računa mIou, ništa se ne prikazuje
             with torch.no_grad():
                 for i, (val_img, val_gt, _) in enumerate(val_loader):
                     val_img, val_gt = utils.cuda([val_img, val_gt], args.gpu_ids)
@@ -549,9 +642,13 @@ class semisuper_cycleGAN(object):
 
             self.running_metrics_val.reset()
 
+            print('The mIoU for the epoch is: ', score["Mean IoU : \t"])
+
             ### For displaying the images generated by generator on tensorboard using validation images
-            val_image, val_gt, _ = iter(val_loader).next()
-            val_image, val_gt = utils.cuda([val_image, val_gt], args.gpu_ids)
+            # ovdje najvjerojatnije potrebne promjene
+            val_image, val_gt, _ = iter(
+                val_loader).next()  # samo učitava sliku iz validation dataseta i njen ground truth, dataloader ih vraća kao tenzore
+            val_image, val_gt = utils.cuda([val_image, val_gt], args.gpu_ids)  # prebacuje te tenzore na GPU
             with torch.no_grad():
                 fake_label = self.Gsi(val_image).detach()
                 fake_label = self.interp(fake_label)
@@ -573,6 +670,7 @@ class semisuper_cycleGAN(object):
             fake_regenerated_label = fake_label_regenerated.data.max(1)[1].squeeze_(1).cpu().numpy()
             val_gt = val_gt.cpu()
 
+            # OVDJE ISPOD potrebne promjene
             fake_img = fake_img.cpu()
             fake_img_from_labels = fake_img_from_labels.cpu()
             ### Now i am going to revert back the transformation on these images
@@ -593,25 +691,34 @@ class semisuper_cycleGAN(object):
                                 (fake_img_from_labels[:, i, :, :] * trans_std[i]) + trans_mean[i])
 
             ### display_tensor is the final tensor that will be displayed on tensorboard
+            # iz ovog fake label se najvjerojatnije može izvući traženi izlaz
             display_tensor_label = torch.zeros([fake_label.shape[0], 3, fake_label.shape[2], fake_label.shape[3]])
             display_tensor_gt = torch.zeros([val_gt.shape[0], 3, val_gt.shape[2], val_gt.shape[3]])
             display_tensor_regen_label = torch.zeros(
                 [fake_label_regenerated.shape[0], 3, fake_label_regenerated.shape[2], fake_label_regenerated.shape[3]])
             for i in range(fake_prediction_label.shape[0]):
                 new_img_label = fake_prediction_label[i]
-                new_img_label = utils.colorize_mask(new_img_label,
-                                                    self.args.dataset)  ### So this is the generated image in PIL.Image format
-                img_tensor_label = utils.PIL_to_tensor(new_img_label, self.args.dataset)
+                new_img_label = utils.colorize_mask(new_img_label, self.args.dataset,
+                                                    self.args.ortopanograms_classes)  ### So this is the generated image in PIL.Image format
+                img_tensor_label = utils.PIL_to_tensor(new_img_label, self.args.dataset,
+                                                       self.args.ortopanograms_classes)
                 display_tensor_label[i, :, :, :] = img_tensor_label
 
                 display_tensor_gt[i, :, :, :] = val_gt[i]
 
+                regen_label = fake_regenerated_label[i]
                 regen_label = fake_regenerated_label[i]
                 regen_label = utils.colorize_mask(regen_label, self.args.dataset, self.args.ortopanograms_classes)
                 regen_tensor_label = utils.PIL_to_tensor(regen_label, self.args.dataset,
                                                          self.args.ortopanograms_classes)
                 display_tensor_regen_label[i, :, :, :] = regen_tensor_label
 
+            # mislim da je ovo ustvari pravi izlaz modela, trebati će ga malo modificirati ako želimo da nam svaki kanal bude jedna slika kao izlaz
+            # znači ovo je kad se jednom model istrenira, na validation skupu podataka se model pokrene
+            # i ovo su rezultati modela nad validation skupom podataka
+            # da, nisu u izlazu kakvom ih trebamo (svaka segmentacijska mapa u svom png fileu)
+            # ali to je ok, ovo je ionako bolje za prikazati, a modifikacije testing.py će nam omogućiti da imamo pravilan input, ovo je
+            # više da vidimo koliko se model dobro istrenirao
             self.writer_semisuper.add_image('Generated segmented image: ',
                                             torchvision.utils.make_grid(display_tensor_label, nrow=2, normalize=True),
                                             epoch)
