@@ -43,9 +43,6 @@ def get_args():
     parser.add_argument('--gen_net', type=str, default='deeplab')
     parser.add_argument('--dis_net', type=str, default='fc_disc')
     parser.add_argument('--unlabeled_ratio', type=float, default=1)
-    parser.add_argument('--lamda_img', type=int, default=0.5)        # For image_cycle_loss
-    parser.add_argument('--lamda_gt', type=int, default=0.1)        # For gt_cycle_loss
-    parser.add_argument('--lamda_perceptual', type=int, default=0)     # For image cycle perceptual loss
     #određuje koliko klasa će se segmentirati za ortopanograme
     #2 - samo pozadina i zubi
     #3 - pozadina, gornji zubi, donji zubi
