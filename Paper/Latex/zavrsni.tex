@@ -1,0 +1,47 @@
+\documentclass[arial, utf8, zavrsni]{fer}
+\usepackage{booktabs}
+\usepackage{algorithm,algpseudocode}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks,
+    citecolor=black,
+    filecolor=black,
+    linkcolor=black,
+    urlcolor=black
+}
+
+\usepackage{subcaption}
+
+\begin{document}
+
+% Dodavanje zahvale ili prazne stranice. Ako ne želite dodati zahvalu, naredbu ostavite radi prazne stranice.
+\zahvala{Zahvaljujem se mentoru, prof. Marku Subašiću na potpori i savjetima na putu kroz nepoznato. Hvala mojoj obitelji te Lei, na svoj potpori koju su mi pružili i nastavljaju pružati.}
+
+\setcounter{tocdepth}{2} %podešava dubinu sadržaja
+\tableofcontents
+
+\include{uvod}
+\include{racunalni_vid}
+\include{duboko_ucenje}
+\include{generativni_modeli}
+\include{segmentacija_ortopanograma}
+\include{zakljucak}
+\bibliography{literatura}
+\bibliographystyle{fer}
+
+\begin{sazetak}
+Cilj ovog rada bio je pronaći i testirati odgovarajuću arhitekturu za problem semantičke segmentacije kada je prisutan manji broj označenih i veći broj neoznačenih primjera. Predstavljena je cycleGAN arhitektura, te je testirana na konkretnom problemu semantičke segmentacije ortopanograma. Arhitektura je izabrana iz razloga što može iskorisiti i neoznačene slike kao pomoć pri treniranju. Dobiveni rezultati su pokazali da cycleGAN arhitektura uspješno rješava navedeni problem, no da ipak zaostaje u usporedbi s najnaprednijim diskriminativnim modelima.
+
+\kljucnerijeci{duboko učenje,konvolucijske neuronske mreže,semantička segmentacija, GAN, cycleGAN, ortopanogrami, medicinske snimke}
+\end{sazetak}
+
+% TODO: Navedite naslov na engleskom jeziku.
+\engtitle{Segmentation of Stomatologic Panoramic X-ray Images}
+\begin{abstract}
+The goal of this work was to find and test an adequate deep learning architecture applicable to the problem of semantic segmentation, in the case when we at our disposal have a limited number of labeled images, but a relatively high amount of unlabeled images. cycleGAN, a type of generative model was  proposed as solution to the starting problem. It was chosen due to the fact that it can use unlabeled images as well as labeled to improve training performance. It was tested on the dataset of stomatologic X-ray images (orthopantomograms), and it was shown that while it successfully solves the given problem, it still falls behind most advanced discriminative models.
+
+\keywords{deep learning,convolutional neural networks,semantic segmentation, GAN, cycleGAN, orthopantomograms, medical imaging}
+\end{abstract}
+
+
+\end{document}
